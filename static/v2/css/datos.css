@@ -1,0 +1,45 @@
+/* AERIS 3.0 · Datos abiertos. */
+.datos-hero{padding-block:14vh 6vh}
+.datos-hero h1{font-family:var(--font-display);font-weight:400;font-size:clamp(52px,7vw,112px);line-height:.96;letter-spacing:-.01em;margin:10px 0 22px;max-width:14ch}
+.datos-hero h1 em{color:#75efd2;font-style:italic}
+.datos-lead{font-size:clamp(16px,1.4vw,19px);line-height:1.65;color:#cfe3ea;max-width:62ch;margin:0}
+.datos-principios{list-style:none;padding:0;margin:44px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;
+  border:1px solid #2a4a56;border-radius:12px;background:#081a25b3;backdrop-filter:blur(10px)}
+.datos-principios li{padding:18px 20px;border-left:1px solid #2a4a56}.datos-principios li:first-child{border-left:0}
+.datos-principios strong{display:block;font-size:14px;color:#e8f1f4;margin-bottom:6px}
+.datos-principios span{font-size:12px;color:#a8bfca;line-height:1.5}
+
+.datos-conjuntos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;padding-block:2vh 8vh}
+.conjunto{--tono:#75efd2;position:relative;display:flex;flex-direction:column;gap:14px;padding:30px;border-radius:14px;
+  border:1px solid #2a4a56;background:linear-gradient(160deg,#0f2735eb,#081a25eb);backdrop-filter:blur(10px);overflow:hidden}
+.conjunto:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--tono),transparent)}
+.conjunto.derivado{--tono:#8fb3ff}.conjunto.modelo{--tono:#e6c789}
+.conjunto-cabeza{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.conjunto-tipo{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--tono);border:1px solid color-mix(in srgb,var(--tono) 45%,transparent);
+  padding:6px 10px;border-radius:999px}
+.conjunto-filas{font-size:13px;color:#a8bfca}.conjunto-filas strong{color:#e8f1f4;font-weight:600;font-variant-numeric:tabular-nums}
+.conjunto h2{font-family:var(--font-display);font-weight:400;font-size:clamp(30px,2.6vw,42px);line-height:1.05;margin:4px 0 0}
+.conjunto-desc{font-size:15px;line-height:1.6;color:#cfe3ea;margin:0}
+.conjunto-meta{margin:0;display:grid;gap:10px;font-size:12px}
+.conjunto-meta dt{color:#75efd2;letter-spacing:.1em;text-transform:uppercase;font-size:10px;margin-bottom:3px}
+.conjunto-meta dd{margin:0;color:#a8bfca;line-height:1.55}
+.conjunto-descarga{align-self:flex-start;margin-top:6px}
+.conjunto.modelo .conjunto-descarga{background:#e6c789;border-color:#e6c789}
+.conjunto-no{font-size:13px;color:#e6c789;margin:0}
+.conjunto-columnas{border-top:1px solid #2a4a56;padding-top:12px;margin-top:auto}
+.conjunto-columnas summary{cursor:pointer;font-size:13px;color:#cfe3ea}
+.conjunto-columnas table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
+.conjunto-columnas th{text-align:left;color:#75efd2;font-weight:500;padding:6px 8px;border-bottom:1px solid #2a4a56}
+.conjunto-columnas td{padding:7px 8px;border-bottom:1px solid #1d3540;color:#a8bfca;vertical-align:top;line-height:1.5}
+.conjunto-columnas code{color:#e8f1f4;font-size:12px}
+
+.datos-notas{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:40px;padding-block:6vh;border-top:1px solid #2a4a56}
+.datos-notas h2{font-family:var(--font-display);font-weight:400;font-size:clamp(36px,3.6vw,56px);margin:8px 0 0}
+.datos-notas ul{margin:0;padding-left:20px;display:grid;gap:14px;color:#cfe3ea;font-size:15px;line-height:1.6}
+.datos-notas code{color:#75efd2}
+.datos-mas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding-block:4vh 10vh}
+.datos-mas .puerta{min-height:220px}
+@media(max-width:900px){.datos-conjuntos,.datos-mas,.datos-notas{grid-template-columns:1fr}.datos-principios{grid-template-columns:1fr 1fr}
+  .datos-principios li:nth-child(3){border-left:0}.datos-principios li:nth-child(n+3){border-top:1px solid #2a4a56}}
+@media(max-width:560px){.datos-principios{grid-template-columns:1fr}.datos-principios li{border-left:0;border-top:1px solid #2a4a56}
+  .datos-principios li:first-child{border-top:0}.conjunto{padding:22px}.datos-hero{padding-top:9vh}}

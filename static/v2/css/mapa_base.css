@@ -1,0 +1,9 @@
+/* Mapa base compartido (portada, laboratorio, vista anterior): OpenStreetMap oscurecido y desaturado
+   para que los puntos contrasten; controles de Leaflet con la paleta de AERIS. */
+.mapa-base-oscura{filter:invert(1) hue-rotate(180deg) saturate(.08) brightness(.9) contrast(.9);opacity:.72}
+.leaflet-container{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#0b1d29}
+.leaflet-control-attribution{background:#07121ecc!important;color:#8fa9b4!important;font-size:9px!important;padding:2px 8px!important;border-top-left-radius:6px}
+.leaflet-container .leaflet-control-attribution a{color:#9fe9d6}
+.leaflet-bar{border:1px solid #33525d!important;box-shadow:0 6px 18px #0006!important}
+.leaflet-container a.leaflet-control-zoom-in,.leaflet-container a.leaflet-control-zoom-out{background:#0c2230;color:#d9ecef;border-bottom-color:#33525d}
+.leaflet-container a.leaflet-control-zoom-in:hover,.leaflet-container a.leaflet-control-zoom-out:hover{background:#163647;color:#75efd2}

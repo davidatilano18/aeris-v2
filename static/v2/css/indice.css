@@ -1,0 +1,30 @@
+/* Bloque «Los seis contaminantes» dentro de ¿Cómo está el aire? Reutiliza estado-bar y estado-row. */
+.indice{margin-top:64px}
+.indice-lead{max-width:62ch;margin:0 0 28px;line-height:1.6;opacity:.88}
+.indice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px;margin-bottom:28px}
+.indice-rank{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:10px}
+.indice-rank li{display:grid;grid-template-columns:minmax(0,11.5em) 1fr auto;grid-template-rows:auto auto;column-gap:12px;align-items:center}
+.indice-rank li span{font-size:.92rem}
+.indice-rank li i{display:block;height:10px;border-radius:5px;background:linear-gradient(90deg,#65ead1,#e5bf79);width:var(--w);min-width:3px}
+.indice-rank li b{font-variant-numeric:tabular-nums}
+.indice-rank li small{grid-column:2/4;opacity:.6;font-size:.78rem}
+.indice-year{display:grid;grid-template-columns:3.2em 1fr 5.5em;gap:10px;align-items:center;margin:10px 0}
+.indice-year small{opacity:.6;font-size:.78rem;text-align:right}
+.indice-method div{padding:4px 2px 8px;line-height:1.6}
+.indice-method p{margin:10px 0}
+@media (max-width:520px){
+  .indice-rank li{grid-template-columns:1fr auto}
+  .indice-rank li i{grid-column:1/3;grid-row:2}
+  .indice-rank li small{grid-column:1/3;grid-row:3}
+  .indice-year{grid-template-columns:3em 1fr}
+  .indice-year small{grid-column:2;text-align:left}
+}
+
+/* Bloque del modelo CAMS para El Marqués. */
+.modelo{margin-top:64px}
+.modelo-cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:18px;margin:14px 0 6px}
+.modelo-cifras div{border-top:1px solid #9bc8c933;padding-top:10px}
+.modelo-cifras dt{font-size:.8rem;opacity:.7}
+.modelo-cifras dd{margin:4px 0;font-size:1.9rem;font-variant-numeric:tabular-nums}
+.modelo-cifras dd small{font-size:.9rem;opacity:.7}
+.modelo-cifras p{margin:0;font-size:.82rem;opacity:.75;line-height:1.45}

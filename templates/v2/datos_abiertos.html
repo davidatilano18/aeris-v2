@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es" class="exp-inmersiva atmosfera-estatica">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Descarga en CSV los datos de calidad del aire y meteorología de AERIS para Querétaro.">
+  <title>AERIS · Datos abiertos</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static',filename='logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static',filename='v2/css/home.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static',filename='v2/css/fuentes.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static',filename='v2/css/inmersivo.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static',filename='v2/css/datos.css') }}">
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+<div class="escena-lienzo" aria-hidden="true"><div class="escena-respaldo"></div></div>
+<header class="site-header"><div class="wrap nav-row">
+  <a class="brand" href="/inicio" aria-label="AERIS, inicio"><span class="brand-icon" aria-hidden="true">≋</span><span>AERIS<small>INTELIGENCIA AMBIENTAL</small></span></a>
+  <nav aria-label="Navegación principal"><a href="/inicio#estado">¿Cómo está?</a><a href="/inicio/aprende">Aprende</a><a href="/inicio#mapa">Mapa</a><a href="/inicio#tiempo">Tiempo</a><a href="/inicio/explorar">Laboratorio</a><a href="/inicio/datos" aria-current="page" class="is-current">Datos</a></nav>
+  <span class="nav-tag">QUERÉTARO / DATOS</span>
+</div></header>
+<main id="main">
+  <section class="wrap datos-hero">
+    <p class="eyebrow">DATOS ABIERTOS</p>
+    <h1>Descarga los datos <em>de AERIS.</em></h1>
+    <p class="datos-lead">Las mismas mediciones que ves en la plataforma, en CSV, listas para Excel, Python o R. Cada archivo conserva su fuente, sus horas en UTC y en hora de Querétaro, y sus marcas de revisión.</p>
+    <ul class="datos-principios" aria-label="Principios de los datos">
+      <li><strong>Fuentes separadas</strong><span>No mezclamos estaciones ni proveedores.</span></li>
+      <li><strong>Sin rellenar</strong><span>Una hora sin dato no aparece; nada se interpola.</span></li>
+      <li><strong>Revisión visible</strong><span>Las marcas acompañan al valor original.</span></li>
+      <li><strong>Modelo ≠ medición</strong><span>El reanálisis va en su propio archivo.</span></li>
+    </ul>
+  </section>
+
+  <section class="wrap datos-conjuntos" aria-label="Conjuntos de datos">
+    {% for clave, c in conjuntos.items() %}
+    {% set tono = 'modelo' if 'Modelo' in c.tipo else ('derivado' if 'Derivado' in c.tipo else 'observacion') %}
+    <article class="conjunto {{ tono }}" id="{{ clave }}">
+      <div class="conjunto-cabeza"><span class="conjunto-tipo">{{ c.tipo }}</span>{% if conteos.get(clave) %}<span class="conjunto-filas"><strong>{{ '{:,}'.format(conteos[clave]) }}</strong> filas</span>{% elif clave in ('pm25-diario', 'indice-diario') %}<span class="conjunto-filas">Un registro por estación y día</span>{% endif %}</div>
+      <h2>{{ c.titulo }}</h2>
+      <p class="conjunto-desc">{{ c.descripcion }}</p>
+      <dl class="conjunto-meta"><div><dt>Origen</dt><dd>{{ c.origen }}</dd></div><div><dt>Licencia y cita</dt><dd>{{ c.licencia }}</dd></div></dl>
+      {% if disponibles.get(clave) %}
+      <a class="boton-escena primario conjunto-descarga" href="/inicio/datos/{{ clave }}.csv" download>Descargar CSV <span aria-hidden="true">↓</span></a>
+      {% else %}
+      <p class="conjunto-no">Este conjunto no está disponible en esta copia de la base.</p>
+      {% endif %}
+      <details class="conjunto-columnas"><summary>Diccionario de columnas ({{ c.columnas|length }})</summary>
+        <table><thead><tr><th scope="col">Columna</th><th scope="col">Significado</th></tr></thead><tbody>
+        {% for nombre, significado in c.columnas %}<tr><td><code>{{ nombre }}</code></td><td>{{ significado }}</td></tr>{% endfor %}
+        </tbody></table></details>
+    </article>
+    {% endfor %}
+  </section>
+
+  <section class="wrap datos-notas">
+    <div><p class="eyebrow">CÓMO LEERLOS</p><h2>Antes de analizar.</h2></div>
+    <ul>
+      <li>Las horas en <code>fecha_utc</code> son la referencia; <code>fecha_local</code> es la misma hora en Querétaro (UTC−6; UTC−5 en veranos anteriores a noviembre de 2022).</li>
+      <li>Las marcas de revisión señalan valores a revisar (ceros, extremos, saltos); no son errores confirmados.</li>
+      <li>OpenAQ API y OpenAQ Archive pueden contener la misma estación con valores distintos: no los sumes ni promedies sin un método.</li>
+      <li>Los datos meteorológicos de NOAA llegan con 2–3 días de retraso; el último día puede estar incompleto.</li>
+      {% if rango and rango[0] %}<li>PM2.5 disponible del <code>{{ rango[0][:10] }}</code> al <code>{{ rango[1][:10] }}</code> (UTC), con periodos sin datos entre campañas.</li>{% endif %}
+    </ul>
+  </section>
+
+  <section class="wrap datos-mas">
+    <a class="puerta" href="/inicio/explorar"><span class="puerta-numero">LABORATORIO</span><span class="puerta-flecha" aria-hidden="true">↗</span><h3>Prefiero explorar antes de descargar.</h3><p>Filtra por estación, fuente y periodo, con gráficas y cobertura.</p></a>
+    <a class="puerta" href="/v2/datos"><span class="puerta-numero">VERSIÓN ANTERIOR</span><span class="puerta-flecha" aria-hidden="true">↗</span><h3>Explorador técnico.</h3><p>La vista técnica original de AERIS 2, con exportación por consulta.</p></a>
+  </section>
+</main>
+<footer class="wrap footer"><a class="brand" href="/inicio">AERIS<small>INTELIGENCIA AMBIENTAL PARA QUERÉTARO</small></a><p>Datos reales. Interpretaciones responsables.<br>Página generada {{ generado.strftime('%d/%m/%Y %H:%M') }} UTC; no es la fecha de medición.</p><a href="/inicio">Volver al inicio</a></footer>
+</body></html>

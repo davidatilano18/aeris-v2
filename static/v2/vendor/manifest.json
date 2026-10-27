@@ -54,5 +54,73 @@
         "sha256": "41a84aa2caba645f966a18d9c2056b73e6d3a81d80bc0046bc0011a2634d4cce"
       }
     ]
+  },
+  {
+    "package": "gsap",
+    "version": "3.15.0",
+    "url": "https://registry.npmjs.org/gsap/-/gsap-3.15.0.tgz",
+    "registry_integrity": "sha512-dMW4CWBTUK1AEEDeZc1g4xpPGIrSf9fJF960qbTZmN/QwZIWY5wgliS6JWl9/25fpTGJrMRtSjGtOmPnfjZB+A==",
+    "files": [
+      {
+        "path": "static/v2/vendor/gsap/gsap.min.js",
+        "sha256": "92bb9a96476f983d212a2bc4f54c889039c1696dd4461d40a736860938570fbb"
+      },
+      {
+        "path": "static/v2/vendor/gsap/ScrollTrigger.min.js",
+        "sha256": "b0b14d67b55b0c43c756ac0b106cfcb09d0879945f6ead64451065b0672916a2"
+      },
+      {
+        "path": "static/v2/vendor/gsap/SplitText.min.js",
+        "sha256": "419f7027a5f086a12cb7988736d8fdd3a6ed2200229661de25b6628ca7ced344"
+      },
+      {
+        "path": "static/v2/vendor/gsap/LICENSE.md",
+        "sha256": "cd14746b5c66a4ae777050ccfe3b9a5fdeb284d21c9f009ce70a64484009598d"
+      }
+    ]
+  },
+  {
+    "package": "@fontsource/instrument-serif",
+    "version": "5.3.0",
+    "url": "https://registry.npmjs.org/@fontsource/instrument-serif/-/instrument-serif-5.3.0.tgz",
+    "registry_integrity": "sha512-mDiaIg0u67sYV59fie92Wz4sM8UiVlbL7fLxnFPCKkX15DMASEnQTREbaP5S5/3DCcsoAOcQ0sV9E4AeY4QqYQ==",
+    "files": [
+      {
+        "path": "static/v2/vendor/fonts/instrument-serif-latin-400-normal.woff2",
+        "sha256": "5eb09b5ac0e28b67c2f041c8ba6d244604ca0c0980d65912ab2d47fed84ddc31"
+      },
+      {
+        "path": "static/v2/vendor/fonts/instrument-serif-latin-400-italic.woff2",
+        "sha256": "5a51946dfffa82972bc98745359c46761515641fda557c25116459a9f83da4a7"
+      },
+      {
+        "path": "static/v2/vendor/fonts/instrument-serif-latin-ext-400-normal.woff2",
+        "sha256": "290e6267dd833bf5f899eba4c29ad0a9b09dbe53f6075b18af38057159e1ff20"
+      },
+      {
+        "path": "static/v2/vendor/fonts/LICENSE-instrument-serif.txt",
+        "sha256": "b6106a757902d2d412e09d94dc4a226fe3da80485208a98003969f1b8b6b1d74"
+      }
+    ]
+  },
+  {
+    "package": "@fontsource-variable/inter",
+    "version": "5.3.0",
+    "url": "https://registry.npmjs.org/@fontsource-variable/inter/-/inter-5.3.0.tgz",
+    "registry_integrity": "sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==",
+    "files": [
+      {
+        "path": "static/v2/vendor/fonts/inter-latin-wght-normal.woff2",
+        "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62"
+      },
+      {
+        "path": "static/v2/vendor/fonts/inter-latin-ext-wght-normal.woff2",
+        "sha256": "34b9c504cab7a73e37b746343a449132e56cf7b5481af2cb81dc74dcff25c956"
+      },
+      {
+        "path": "static/v2/vendor/fonts/LICENSE-inter.txt",
+        "sha256": "3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345"
+      }
+    ]
   }
 ]

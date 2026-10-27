@@ -1,0 +1,35 @@
+{% if indice %}{% set ix = indice %}{% set clases = {'Buena':'b-buena','Aceptable':'b-aceptable','Mala':'b-mala','Muy mala':'b-muymala','Extremadamente mala':'b-extrema'} %}
+<div class="indice" id="contaminantes" aria-labelledby="indice-title">
+  <p class="mini-label">LOS SEIS CONTAMINANTES · {{ ix.desde.year }}–{{ ix.hasta.year }}</p>
+  <h3 class="estado-sub" id="indice-title">¿Qué es lo que empeora el aire?</h3>
+  <p class="indice-lead">La norma califica cada día con el contaminante que peor esté. Con PM2.5, PM10, ozono, NO₂, SO₂ y CO, de {{ '{:,}'.format(ix.dias) }} días completos de medición por estación, <strong>{{ '%.0f'|format(ix.porcentajes['Buena']) }} %</strong> fueron Buena, <strong>{{ '%.0f'|format(ix.porcentajes['Aceptable']) }} %</strong> Aceptable y <strong>{{ '%.0f'|format(ix.porcentajes['Mala'] + ix.porcentajes['Muy mala'] + ix.porcentajes['Extremadamente mala']) }} %</strong> Mala o peor.</p>
+  <div class="indice-grid">
+    <article class="estado-panel">
+      <p class="mini-label">EN LOS {{ '{:,}'.format(ix.no_buenos) }} DÍAS QUE NO FUERON BUENOS, LO DETERMINÓ…</p>
+      <ol class="indice-rank">{% for d in ix.determinantes %}<li><span>{{ d.nombre }}</span><i style="--w:{{ '%.1f'|format(d.pct) }}%" aria-hidden="true"></i><b>{{ '%.0f'|format(d.pct) }} %</b><small>{{ '{:,}'.format(d.dias) }} días</small></li>{% endfor %}</ol>
+      <p class="estado-note">Un día puede tener más de un contaminante empatado en la peor categoría, por eso la suma pasa de 100 %. El PM10 solo se mide en Carrillo Puerto.</p>
+    </article>
+    <article class="estado-panel">
+      <p class="mini-label">AÑO POR AÑO · TODAS LAS ESTACIONES</p>
+      {% for a in ix.anios %}<div class="indice-year"><strong>{{ a.anio }}</strong>
+        <div class="estado-bar" role="img" aria-label="{{ a.anio }}: {% for b, n in a.conteo.items() if n %}{{ n }} días {{ b }}{{ ', ' if not loop.last }}{% endfor %}">{% for b, n in a.conteo.items() if n %}<i class="{{ clases[b] }}" style="--w:{{ '%.2f'|format(a.porcentajes[b]) }}%" title="{{ b }}: {{ n }} días"><span>{{ n }}</span></i>{% endfor %}</div>
+        <small>{{ '{:,}'.format(a.dias) }} días</small></div>{% endfor %}
+      <p class="estado-note">Cada año tiene distinta cobertura (2024 tiene pocos meses en el archivo): sirve para comparar proporciones con cautela, no demuestra una tendencia.</p>
+    </article>
+  </div>
+  <div class="estado-series">
+    {% for f in ix.filas %}<article class="estado-row">
+      <div class="estado-row-head"><strong>{{ f.nombre }}</strong><span>{{ f.municipio }} · {{ short_date(f.primero) }} – {{ short_date(f.ultimo) }}</span></div>
+      <div class="estado-bar" role="img" aria-label="{{ f.nombre }}: {% for b, n in f.conteo.items() if n %}{{ n }} días {{ b }}{{ ', ' if not loop.last }}{% endfor %}">{% for b, n in f.conteo.items() if n %}<i class="{{ clases[b] }}" style="--w:{{ '%.2f'|format(f.porcentajes[b]) }}%" title="{{ b }}: {{ n }} días"><span>{{ n }}</span></i>{% endfor %}</div>
+      <p class="estado-row-foot">{{ f.dias }} días completos{% if f.principal %} · lo que más pesó: <strong>{{ f.principal }}</strong>{% endif %}{% if f.sin %} · sin {{ f.sin|join(' ni ') }} en esta estación{% endif %}</p>
+    </article>{% endfor %}
+  </div>
+  <details class="source-details indice-method"><summary>Cómo se calcula <span>NOM-172 · fuente · revisión</span></summary><div>
+    <p><strong>Concentración de cada día</strong> (NOM-172-SEMARNAT-2023, Tabla 3): PM2.5 y PM10, promedio de 24 horas; ozono, NO₂ y SO₂, la hora más alta; CO, el promedio móvil de 8 horas más alto. Se exigen al menos 18 horas con dato válido en el día local, también para los máximos (criterio de AERIS: un día incompleto puede no incluir el pico). Se redondea como indica la norma y se clasifica con las Tablas 4 a 9 vigentes desde 2026.</p>
+    <p><strong>Fuente:</strong> archivo público de OpenAQ con datos de la red estatal publicados en SINAICA; hora y unidad originales. Unos días de mayo de 2026 llegaron con otras unidades (ppb, µg/m³ para ozono) y se descartaron en lugar de convertirlos.</p>
+    <p><strong>Revisión automática ({{ ix.revision }}):</strong> una hora de gases o PM10 se aparta si supera el inicio de «Extremadamente mala» o si cambia más que el tope de «Mala» respecto de la hora anterior. Se apartaron {{ '{:,}'.format(ix.horas_revision) }} de {{ '{:,}'.format(ix.horas_revision + ix.horas_gases) }} horas (por ejemplo, CO de 39 ppm junto a horas en cero). No se borran; una marca no confirma un error.{% set sb = ix.sensibilidad %} Por construcción, esta regla impide que un gas o el PM10 lleguen a «Extremadamente mala»: sin ella, {{ sb.dias_que_cambian }} días cambiarían de categoría y habría {{ sb.graves_sin }} días Muy mala o Extremadamente mala en vez de {{ sb.graves_con }}. La mayoría parecen fallas del sensor (CO de 39 ppm entre horas en cero, ozono alto toda la noche), pero algunos picos de SO₂ de una sola hora en San Juan del Río podrían ser reales: no podemos confirmarlo sin la validación oficial de la red.</p>
+    <p>Cada estación se califica por separado: no se promedian estaciones ni se rellenan huecos. Una estación representa su entorno, no todo el municipio.</p>
+    <a href="/inicio/datos">Descargar el índice diario completo ↓</a>
+  </div></details>
+</div>
+{% endif %}

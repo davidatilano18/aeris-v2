@@ -17,7 +17,7 @@ export function initializeMap() {
       event.currentTarget.textContent = 'Activar mapa base en línea'; event.currentTarget.setAttribute('aria-pressed', 'false');
       return;
     }
-    tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+    tileLayer = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18, className: 'mapa-base-oscura', attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
     tileLayer.on('tileerror', () => { document.getElementById('mapNote').textContent = 'El mapa base en línea no está disponible. Las posiciones del catálogo y la lista siguen funcionando.'; });
     event.currentTarget.textContent = 'Desactivar mapa base en línea'; event.currentTarget.setAttribute('aria-pressed', 'true');
   });

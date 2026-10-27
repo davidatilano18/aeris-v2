@@ -1,0 +1,13 @@
+/* AERIS 3.0 · Identidad común para las vistas v2 (tema claro): tipografía local y transiciones nativas. */
+body{font-family:var(--font-text)}
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:.3s cubic-bezier(.4,0,.2,1) both aeris-v2-sale}
+::view-transition-new(root){animation:.4s cubic-bezier(.2,.7,.2,1) both aeris-v2-entra}
+@keyframes aeris-v2-sale{to{opacity:0}}
+@keyframes aeris-v2-entra{from{opacity:0;transform:translateY(10px)}}
+@media(prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}
+.aviso-version{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap;padding:10px 16px;
+  background:#050f18;color:#cfe3ea;font:13px/1.4 var(--font-text);border-bottom:1px solid #75efd255}
+.aviso-version strong{color:#75efd2;font-weight:600}
+.aviso-version a{color:#04141c;background:#75efd2;padding:6px 14px;border-radius:999px;text-decoration:none;font-weight:600}
+.aviso-version a:focus-visible{outline:2px solid #fff;outline-offset:2px}

@@ -1,0 +1,76 @@
+/* AERIS 3.0 · Laboratorio: jerarquía editorial, estados de carga y transiciones. Los datos no cambian. */
+.workspace{font-family:var(--font-text)}
+.workspace .lab-title h1{font-family:var(--font-display);font-weight:400;font-size:clamp(44px,5.2vw,78px);letter-spacing:-.01em;line-height:1}
+.workspace .lab-title h1 em{font-style:italic}
+.workspace h2,.workspace .panel h3,.workspace .weather-intro h2{font-family:var(--font-display);font-weight:400;letter-spacing:-.005em}
+.workspace .lab-header{position:sticky;top:0;z-index:30;background:#050f18c4;backdrop-filter:blur(14px) saturate(1.2)}
+
+/* Cifras: un destello breve cuando cambian (la cifra final es la publicada). */
+.cifra-nueva{animation:aeris-cifra .9s cubic-bezier(.2,.7,.2,1)}
+@keyframes aeris-cifra{0%{box-shadow:inset 0 0 0 1px #75efd200}25%{box-shadow:inset 0 0 0 1px #75efd266,0 0 28px #75efd21f}100%{box-shadow:inset 0 0 0 1px #75efd200}}
+
+/* Gráficas: mientras consultan se atenúan con un brillo de carga; al terminar aparecen. */
+#labChartBox,#weatherCharts{transition:opacity .35s ease}
+#labChartBox[aria-busy=true],#weatherCharts[aria-busy=true]{opacity:.45;background-image:linear-gradient(110deg,transparent 30%,#75efd20d 50%,transparent 70%);
+  background-size:220% 100%;animation:aeris-carga 1.3s linear infinite}
+@keyframes aeris-carga{to{background-position:-220% 0}}
+.recien-actualizado canvas,.recien-actualizado .weather-chart-card{animation:aeris-aparece .55s cubic-bezier(.2,.7,.2,1) both}
+.recien-actualizado .weather-chart-card:nth-child(2){animation-delay:.05s}.recien-actualizado .weather-chart-card:nth-child(3){animation-delay:.1s}
+.recien-actualizado .weather-chart-card:nth-child(n+4){animation-delay:.15s}
+@keyframes aeris-aparece{from{opacity:0;transform:translateY(10px)}}
+
+/* Errores y ausencia de datos: más visibles, sin alarmismo. */
+.workspace .notice.error{border-left:3px solid #ef8f3d;background:#2a1c1499}
+#labStatus,#weatherStatus{transition:color .3s}
+
+/* Transiciones nativas entre páginas. */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:.3s cubic-bezier(.4,0,.2,1) both aeris-sale-lab}
+::view-transition-new(root){animation:.4s cubic-bezier(.2,.7,.2,1) both aeris-entra-lab}
+@keyframes aeris-sale-lab{to{opacity:0}}
+@keyframes aeris-entra-lab{from{opacity:0;transform:translateY(12px)}}
+
+@media(max-width:760px){.workspace .lab-header{position:relative}}
+@media(prefers-reduced-motion:reduce){
+  #labChartBox[aria-busy=true],#weatherCharts[aria-busy=true],.cifra-nueva,.recien-actualizado canvas,.recien-actualizado .weather-chart-card{animation:none}
+  ::view-transition-old(root),::view-transition-new(root){animation:none}}
+
+/* Laboratorio con el lenguaje visual de la portada 3.0: cielo, vidrio y controles redondeados. */
+.workspace{background:#050f18}
+.workspace .escena-lienzo{position:fixed;inset:0;z-index:0;pointer-events:none}
+.workspace .escena-respaldo{display:block}
+.workspace .lab-shell{position:relative;z-index:1}
+.workspace .lab-header{border-bottom:1px solid #8bdad322}
+.workspace .lab-header nav a[aria-current]{color:#75efd2}
+.workspace .lab-title{padding-top:6vh}
+.workspace .panel,.workspace .filter-dock,.workspace .research-output,.workspace .weather-controls,.workspace .weather-evidence,
+.workspace .weather-table{background:linear-gradient(160deg,#0f2735d9,#081a25d9);border:1px solid #2a4a56;border-radius:14px;
+  backdrop-filter:blur(12px) saturate(1.15);box-shadow:0 18px 50px #0000002e}
+.workspace .lab-kpis{border:1px solid #2a4a56;border-radius:14px;background:#081a25b8;backdrop-filter:blur(10px);overflow:hidden}
+.workspace .lab-kpis strong{font-family:var(--font-display);font-weight:400;font-size:clamp(34px,3.2vw,48px);letter-spacing:-.01em}
+.workspace .button{border-radius:999px;font-weight:500;letter-spacing:.01em}
+.workspace .button.primary{background:#75efd2;color:#04141c}
+.workspace .button.outline{border-color:#75efd255;background:#0b222e99}
+.workspace .button.outline:hover,.workspace .button.outline:focus-visible{border-color:#75efd2}
+.workspace select,.workspace input[type=date]{border-radius:10px;border-color:#2f5560;background:#081a25;min-height:44px;font-size:13px;padding-inline:12px}
+.workspace select:focus-visible,.workspace input:focus-visible{outline:2px solid #75efd2;outline-offset:2px}
+.workspace .filter-heading strong{font-family:var(--font-display);font-weight:400;font-size:24px}
+/* Aire / Tiempo como control segmentado. */
+.workspace .domain-switch{display:inline-flex;gap:4px;padding:5px;border:1px solid #2a4a56;border-radius:999px;background:#081a25cc;backdrop-filter:blur(10px)}
+.workspace .domain-switch button{min-width:0;border:0;border-radius:999px;padding:12px 26px;text-align:center;transition:background .3s,color .3s}
+.workspace .domain-switch button span{font-size:10px}
+.workspace .domain-switch button[aria-pressed=true]{background:#75efd2;color:#04141c}
+.workspace .domain-switch button[aria-pressed=true] span{color:#0d3a33}
+.workspace .research-switch button,.workspace .mobile-views button{border-radius:999px}
+.workspace .research-switch button[aria-pressed=true],.workspace .mobile-views button[aria-pressed=true]{background:#75efd2;color:#04141c;border-color:#75efd2}
+.workspace .panel-head{border-bottom-color:#2a4a56}
+@media(max-width:760px){.workspace .domain-switch{display:flex;width:100%}.workspace .domain-switch button{flex:1;padding:10px 12px}
+  .workspace .lab-title{padding-top:3vh}}
+/* La fecha no es una cifra: letra de texto compacta. Margen interior ahora que el panel tiene borde. */
+.workspace .lab-kpis #labLatest{font-family:var(--font-text);font-weight:500;font-size:clamp(18px,1.6vw,22px);letter-spacing:0;line-height:1.3}
+.workspace .lab-kpis article,.workspace .lab-kpis article:first-child{padding:20px 24px}
+@media(max-width:760px){.workspace .lab-kpis article,.workspace .lab-kpis article:first-child{padding:16px}}
+.workspace .lab-aprende{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin:0 0 24px;padding:14px 18px;
+  border:1px solid #2a4a56;border-left:3px solid #75efd2;border-radius:10px;background:#081a25b8;backdrop-filter:blur(8px)}
+.workspace .lab-aprende p{margin:0;font-size:13px;line-height:1.6;color:#cfe3ea;max-width:90ch}.workspace .lab-aprende strong{color:#fff}
+.workspace .lab-aprende a{font-size:13px;color:#75efd2;white-space:nowrap}

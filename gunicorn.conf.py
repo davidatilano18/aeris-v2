@@ -21,3 +21,9 @@ errorlog = '-'
 access_log_format = '%(t)s %(m)s %(U)s %(s)s %(L)s'
 capture_output = True
 preload_app = False
+
+
+def post_worker_init(worker):
+    # Cada trabajador (también tras max_requests) prepara los resúmenes de la portada sin bloquear.
+    from aeris_web import precalentar
+    precalentar(worker.wsgi)

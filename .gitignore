@@ -38,3 +38,4 @@ models/
 data/sync_runtime/
 data/*.sync.lock
 data/*.sync.stop
+data/dev/

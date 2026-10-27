@@ -107,6 +107,7 @@ Ver [plan de despliegue](docs/aeris_web_deployment_plan.md) y
 |---|---|
 | Operación general | [Operación detallada](docs/operacion.md) · [Recopilación automatizada](docs/automated_collection.md) · [Actualización controlada](docs/controlled_update.md) · [Programador Python directo](docs/direct_python_scheduler.md) · [Preparación del programador](docs/scheduler_readiness.md) |
 | Datos y calidad | [Fuentes históricas](docs/historical_sources.md) · [Calidad versionada](docs/versioned_quality.md) · [Verificación de la API](docs/live_api_verification.md) · [Plan de expansión](docs/aeris_data_expansion_plan.md) · [Visibilidad por lotes](docs/aeris_batch_visibility_validation.md) |
+| Capa ambiental | [Inventario de fuentes](docs/aeris_fuentes_ambientales.md) · [Arquitectura y operación](docs/aeris_capa_ambiental.md) · [Contrato de API v1](docs/aeris_api_ambiental_v1.md) |
 | Archivo histórico | [Ensayo de importación](docs/aeris_archive_import_dry_run.md) · [Preparación para producción](docs/aeris_archive_production_readiness.md) |
 | Pronóstico | [Sistema de predicción](docs/prediction_system.md) · [Evaluación predictiva](docs/predictive_evaluation.md) |
 | Dashboard | [Plan v2](docs/dashboard_v2_plan.md) · [Implementación v2](docs/dashboard_v2_implementation.md) · [v2.1](docs/dashboard_v21_implementation.md) · [Experiencia pública v2.1](docs/dashboard_v21_public_experience.md) · [v2.2](docs/dashboard_v22_implementation.md) · [Propuesta de rediseño](docs/aeris_research_redesign_proposal.md) |

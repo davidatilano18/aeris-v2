@@ -7,12 +7,15 @@
   <meta name="theme-color" content="#102a43">
   <title>{% block title %}AERIS · Observatorio de PM2.5{% endblock %}</title>
   <link rel="icon" href="{{ url_for('logo') }}" type="image/png">
-  <link rel="stylesheet" href="{{ url_for('static', filename='v2/vendor/leaflet/leaflet.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='v2/vendor/leaflet/leaflet.css') }}"><link rel="stylesheet" href="{{ url_for('static',filename='v2/css/mapa_base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='v2/css/tokens.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='v2/css/dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='v2/css/accessibility.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='v2/css/fuentes.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='v2/css/transiciones.css') }}">
 </head>
 <body>
+  <div class="aviso-version" role="note"><span><strong>AERIS 3.0</strong> · Estás viendo la versión anterior.</span><a href="/inicio">Ir a la versión actual →</a></div>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   {% block body %}{% endblock %}
   <noscript><div class="noscript">Activa JavaScript para consultar el mapa y las gráficas. Las mediciones también están disponibles en la <a href="{{ url_for('index') }}">interfaz anterior</a>.</div></noscript>

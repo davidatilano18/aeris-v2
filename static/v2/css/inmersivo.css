@@ -1,0 +1,96 @@
+/* AERIS 3.0 · experiencia inmersiva. Solo se carga con ?experiencia=inmersiva.
+   El dato científico siempre queda por encima de la decoración (z-index y contraste). */
+.exp-inmersiva body{font-family:var(--font-text);background:#050f18}
+.exp-inmersiva main>*,.exp-inmersiva footer{position:relative;z-index:1}
+.exp-inmersiva .site-header{position:sticky;top:0;z-index:20;background:#050f18b8;backdrop-filter:blur(14px) saturate(1.2);border-bottom-color:#8bdad322}
+
+/* Lienzo de atmósfera: fijo detrás de todo, nunca intercepta el puntero. */
+.escena-lienzo,.exp-inmersiva main>.escena-lienzo{position:fixed;inset:0;z-index:0;pointer-events:none}
+.escena-lienzo canvas{width:100%;height:100%;display:block}
+.escena-respaldo{position:absolute;inset:0;display:none;
+  background:
+    radial-gradient(1px 1px at 12% 22%,#ffffffb0 50%,transparent 51%),radial-gradient(1.5px 1.5px at 72% 18%,#bff7ebaa 50%,transparent 51%),
+    radial-gradient(1px 1px at 38% 64%,#ffffff90 50%,transparent 51%),radial-gradient(2px 2px at 84% 56%,#bff7eb80 50%,transparent 51%),
+    radial-gradient(1px 1px at 22% 82%,#ffffff80 50%,transparent 51%),radial-gradient(1.5px 1.5px at 58% 40%,#ffffffa0 50%,transparent 51%),
+    radial-gradient(120% 60% at 50% 110%,#2c6b6e 0%,#123543 35%,transparent 70%),
+    radial-gradient(80% 50% at 30% 30%,#0e2a3a 0%,transparent 70%),
+    linear-gradient(180deg,#040c14 0%,#071a26 45%,#0d2f3b 100%)}
+.atmosfera-estatica .escena-lienzo canvas,.escena-sin-js .escena-lienzo canvas{display:none}
+.atmosfera-estatica .escena-respaldo,.escena-sin-js .escena-respaldo{display:block}
+
+/* Escena 1: introducción atmosférica. */
+.escena{position:relative}
+.escena-intro{min-height:100svh;display:grid;place-items:center;text-align:center;padding:96px 20px 72px}
+.intro-contenido{max-width:980px}
+.intro-kicker{font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:#75efd2;margin:0 0 18px}
+.intro-marca{font-family:var(--font-display);font-weight:400;font-size:clamp(92px,17vw,248px);line-height:.86;
+  letter-spacing:.08em;margin:0 0 0 .08em;color:#f2fbfd;text-shadow:0 0 60px #75efd233,0 0 140px #75efd21a}
+.intro-lema{font-family:var(--font-display);font-size:clamp(22px,2.6vw,36px);color:#cfe3ea;margin:22px 0 34px;line-height:1.25}
+.intro-lema em{color:#75efd2}
+.intro-acciones{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.boton-escena{display:inline-flex;align-items:center;gap:10px;font:500 15px/1 var(--font-text);padding:16px 24px;border-radius:999px;
+  border:1px solid #75efd255;background:#0b222e99;color:#e8f1f4;backdrop-filter:blur(10px);text-decoration:none;cursor:pointer;
+  transition:background .3s,border-color .3s,transform .3s}
+.boton-escena:hover,.boton-escena:focus-visible{border-color:#75efd2;background:#123544cc;transform:translateY(-1px)}
+.boton-escena.primario{background:#75efd2;color:#04141c;border-color:#75efd2}
+.boton-escena.primario:hover,.boton-escena.primario:focus-visible{background:#9bf5e0}
+.boton-escena:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.intro-dato{max-width:620px;margin:30px auto 0;font-size:13px;line-height:1.6;color:#a8bfca}
+.intro-dato strong{color:#e8f1f4;font-weight:600}
+.intro-desliza{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);display:grid;justify-items:center;gap:10px;
+  font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#a8bfca;text-decoration:none}
+.intro-desliza:after{content:"";width:1px;height:46px;background:linear-gradient(#75efd2,transparent);animation:aeris-cae 2.4s ease-in-out infinite}
+@keyframes aeris-cae{0%{transform:scaleY(0);transform-origin:top}45%{transform:scaleY(1);transform-origin:top}55%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* Escena 2: entrar al aire. Sin animación, las frases se leen apiladas. */
+.escena-aire{min-height:100svh;display:grid;place-items:center;padding:80px 20px}
+.aire-fijo{position:relative;display:grid;gap:12vh;max-width:1100px;text-align:center}
+.aire-frase{font-family:var(--font-display);font-size:clamp(32px,4.6vw,68px);line-height:1.12;color:#eef7fa;margin:0;
+  text-shadow:0 2px 30px #050f18}
+.aire-frase em{font-style:italic;color:#75efd2}
+.aire-frase small{display:block;font:400 14px/1.6 var(--font-text);color:#a8bfca;margin-top:18px;letter-spacing:.02em}
+.escena-animada .aire-fijo{display:block;height:100svh;max-width:none;width:100%}
+.escena-animada .aire-frase{position:absolute;inset:0;margin:auto;height:max-content;max-width:min(1100px,92vw);opacity:0}
+
+/* Escena 3: los datos toman el centro. Tipografía editorial en titulares. */
+.exp-inmersiva .section-head h2,.exp-inmersiva .estado-sub,.exp-inmersiva .estado-panel h3{font-family:var(--font-display);font-weight:400;letter-spacing:-.005em}
+.exp-inmersiva .section-head h2{font-size:clamp(40px,4.8vw,70px);line-height:1.02}
+.exp-inmersiva .estado-big{font-family:var(--font-display);font-weight:400;letter-spacing:-.01em}
+.exp-inmersiva .estado-big em{font-style:italic}
+.exp-inmersiva #estado{padding-top:12vh}
+
+/* Escena 4: puertas a la plataforma. */
+.puertas{padding-block:12vh 6vh}
+.puertas-titulo{font-family:var(--font-display);font-weight:400;font-size:clamp(40px,4.8vw,70px);margin:8px 0 34px;line-height:1.02}
+.puertas-rejilla{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.puerta{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:300px;padding:28px;border-radius:14px;
+  border:1px solid #2a4a56;background:linear-gradient(160deg,#0f2735e6,#081a25e6);color:#e8f1f4;text-decoration:none;overflow:hidden;
+  transition:border-color .35s,transform .35s cubic-bezier(.2,.7,.2,1)}
+.puerta:before{content:"";position:absolute;inset:auto -30% -60% auto;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,#75efd22e,transparent 65%);transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+.puerta:hover,.puerta:focus-visible{border-color:#75efd2;transform:translateY(-4px)}
+.puerta:hover:before,.puerta:focus-visible:before{transform:scale(1.25) translate(-10%,-10%)}
+.puerta:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.puerta-numero{font-size:12px;letter-spacing:.24em;color:#75efd2}
+.puerta h3{font-family:var(--font-display);font-weight:400;font-size:clamp(30px,2.6vw,42px);margin:auto 0 10px;line-height:1.05}
+.puerta p{font-size:14px;line-height:1.6;color:#a8bfca;margin:0}
+.puerta-cifra{font-size:13px;color:#cfe3ea;margin-top:18px!important;font-variant-numeric:tabular-nums}
+.puerta-cifra strong{font-size:22px;font-weight:500;color:#fff;margin-right:6px}
+.puerta-flecha{position:absolute;top:26px;right:26px;font-size:22px;color:#75efd2;transition:transform .35s}
+.puerta:hover .puerta-flecha{transform:translate(4px,-4px)}
+
+/* Transiciones nativas entre páginas (los navegadores sin soporte cambian de página como siempre). */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:.35s cubic-bezier(.4,0,.2,1) both aeris-sale}
+::view-transition-new(root){animation:.45s cubic-bezier(.2,.7,.2,1) both aeris-entra}
+@keyframes aeris-sale{to{opacity:0;transform:scale(.985)}}
+@keyframes aeris-entra{from{opacity:0;transform:translateY(14px)}}
+
+@media(max-width:900px){.puertas-rejilla{grid-template-columns:1fr}.puerta{min-height:210px}}
+.exp-inmersiva section[id]{scroll-margin-top:84px}
+@media(max-width:760px){.exp-inmersiva .site-header{position:relative}.exp-inmersiva section[id]{scroll-margin-top:12px}.escena-intro{padding:88px 16px 80px}.intro-marca{letter-spacing:.05em}.intro-lema{margin:16px 0 26px}
+  .boton-escena{padding:14px 20px;font-size:14px}.aire-fijo{gap:9vh}}
+@media(prefers-reduced-motion:reduce){
+  .intro-desliza:after{animation:none}
+  ::view-transition-old(root),::view-transition-new(root){animation:none}
+  .puerta,.puerta:before,.boton-escena{transition:none}}

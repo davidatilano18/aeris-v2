@@ -1,0 +1,30 @@
+{% if modelo %}{% set m = modelo %}{% set v = m.validacion_celda or m.validacion %}
+<div class="modelo" id="modelo-marques" aria-labelledby="modelo-title">
+  <p class="mini-label">EL MARQUÉS · ESTIMACIÓN DE MODELO, NO MEDICIÓN</p>
+  <h3 class="estado-sub" id="modelo-title">Donde no hay sensor: lo que estima un modelo.</h3>
+  <p class="indice-lead">El Marqués no tiene medición de PM2.5 desde 2021. El modelo atmosférico <strong>CAMS</strong> de Copernicus estima para su ubicación un promedio de <strong>{{ '%.1f'|format(m.media) }} µg/m³</strong> entre {{ short_date(m.desde) }} y {{ short_date(m.hasta) }}, con {{ m.sobre_guia }} de {{ '{:,}'.format(m.dias) }} días sobre la guía de la OMS. Pero un modelo no es un sensor.{% if m.celda %} Su rejilla es tan gruesa que a El Marqués le asigna <strong>exactamente el mismo valor</strong> que a {{ m.celda_texto }}, donde sí se mide. Ahí podemos ver cuánto se equivoca.{% endif %}</p>
+  <div class="indice-grid">
+    <article class="estado-panel">
+      <p class="mini-label">PROMEDIO MENSUAL DE PM2.5 · µg/m³</p>
+      <div class="estado-chart"><canvas id="modeloSerie" data-cercana="{{ m.cercana }}" role="img" aria-label="Promedio mensual de PM2.5: modelo CAMS para la celda de El Marqués y medición en {{ m.cercana }}"></canvas></div>
+      <p class="estado-note">Línea punteada: el modelo, igual para El Marqués y su celda. Línea continua: medición real en {{ m.cercana }}, a unos 8 km. Los huecos son meses sin 15 días completos de medición.</p>
+    </article>
+    <article class="estado-panel">
+      <p class="mini-label">¿QUÉ TAN BIEN ACIERTA EN ESA CELDA? · {{ '{:,}'.format(v.dias) }} DÍAS{% if m.validacion_celda %} EN {{ m.celda|length }} ESTACIONES{% endif %}</p>
+      <dl class="modelo-cifras">
+        <div><dt>Diferencia promedio</dt><dd>{{ '%+.1f'|format(v.sesgo) }} <small>µg/m³</small></dd><p>El modelo da {{ '%.1f'|format(v.modelo) }} donde se midió {{ '%.1f'|format(v.medido) }}: subestima.</p></div>
+        <div><dt>Misma categoría de la norma</dt><dd>{{ '%.0f'|format(v.misma_categoria) }} <small>%</small></dd><p>de los días.</p></div>
+        <div><dt>Días no buenos que detecta</dt><dd>{% if v.no_buenos_detectados is not none %}{{ '%.0f'|format(v.no_buenos_detectados) }} <small>%</small>{% else %}—{% endif %}</dd><p>De {{ '{:,}'.format(v.no_buenos) }} días medidos como Aceptable o peor; el resto lo dio como Buena.</p></div>
+        <div><dt>Correlación diaria</dt><dd>{{ '%.2f'|format(v.r) if v.r is not none else '—' }}</dd><p>Sigue la tendencia (días más y menos sucios), no el nivel exacto.</p></div>
+      </dl>
+      <p class="estado-note">Por eso no calificamos los días de El Marqués con la norma: el modelo sirve para ver patrones (temporadas, episodios regionales), no para decir cómo estuvo el aire un día. Hace falta un sensor.</p>
+    </article>
+  </div>
+  <details class="source-details indice-method"><summary>Sobre el modelo <span>CAMS · Open-Meteo · validación</span></summary><div>
+    <p><strong>Qué es:</strong> pronóstico del modelo global del Copernicus Atmosphere Monitoring Service (ECMWF), en una rejilla de 0.4° (unos 45 km) con salida cada 3 horas, encadenado y servido por hora por Open-Meteo desde agosto de 2022. Una celda abarca buena parte de la zona metropolitana: no distingue El Marqués de Querétaro capital.</p>
+    <p><strong>Validación:</strong> en cada estación con PM2.5 se pidió el modelo para su mismo punto y se compararon promedios diarios (≥ 18 horas en ambos; horas en revisión excluidas). Las cifras de arriba son de las estaciones en la misma celda que El Marqués; con las {{ m.estaciones|length }} estaciones: {{ '%+.1f'|format(m.validacion.sesgo) }} µg/m³, r = {{ '%.2f'|format(m.validacion.r) if m.validacion.r is not none else '—' }}, {{ '%.0f'|format(m.validacion.misma_categoria) }} % misma categoría. Por estación: {% for e in m.estaciones %}{{ e.nombre }}: {{ '%+.1f'|format(e.sesgo) }} µg/m³, r = {{ '%.2f'|format(e.r) if e.r is not none else '—' }}{{ '; ' if not loop.last else '.' }}{% endfor %} No se corrige el sesgo ni se mezcla el modelo con las mediciones.</p>
+    <p><strong>Atribución:</strong> generado con información del Copernicus Atmosphere Monitoring Service, servida por Open-Meteo.com (CC BY 4.0, uso no comercial); procesado por AERIS.</p>
+  </div></details>
+  <script id="modeloDatos" type="application/json">{{ m.serie|tojson }}</script>
+</div>
+{% endif %}
