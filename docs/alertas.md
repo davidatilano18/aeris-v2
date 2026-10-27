@@ -53,3 +53,18 @@ minuto por chat. Los logs no incluyen chats, textos ni el token.
 | `/baja` | Borra el chat y todo lo asociado |
 
 Los avisos comparan lecturas horarias con el umbral elegido; no son un índice de salud.
+
+## Avisos
+
+El mismo proceso del bot evalúa al arrancar y cada vez que cambia
+`data/sync_runtime/scheduler/last_success.json` (sincronización exitosa nueva). La
+ingesta (`data_ingestion/scheduled_sync.py`) y la tarea programada no se modifican:
+una falla de alertas no puede afectar la recopilación.
+
+- Se ignoran lecturas `<= 0` y las de más de 4 h (OpenAQ publica con ~2-3 h de retraso).
+- `supera`: la lectura pasa de `<= umbral` a `> umbral`. No se repite mientras siga alta.
+- `normaliza`: tras un `supera`, la lectura baja de `0.9 × umbral` (histéresis contra avisos alternos).
+- Lecturas con `requiere_revision` (> 100 µg/m³ o salto de 100) se avisan con «lectura en revisión».
+- En horario de silencio no se envía ni se registra; si sigue alto al terminar, se avisa entonces.
+- Un mensaje por chat. Solo se registra lo que Telegram confirmó; 400/403 (bot bloqueado)
+  pausa el chat; 429 o red caída deja el resto pendiente para reintentar.

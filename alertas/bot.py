@@ -2,6 +2,7 @@
 
 Uso: python -B -m alertas.bot [--key-file .secrets/telegram_bot_token.clixml]
 El token nunca se imprime; los logs no incluyen chats ni textos de mensajes.
+Además envía los avisos: evalúa al arrancar y tras cada sincronización exitosa nueva.
 """
 import argparse
 import json
@@ -15,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from alertas import lecturas, store
+from alertas import evaluar, lecturas, store
 
 ROOT = Path(__file__).resolve().parent.parent
 LOCAL = ZoneInfo('America/Mexico_City')
@@ -201,11 +202,15 @@ def procesar(bot, update, limitador):
 def log(evento): print(f'{datetime.now(timezone.utc):%Y-%m-%dT%H:%M:%SZ} {evento}', flush=True)
 
 
-def run(api, bot, stop=lambda: False, pausa=time.sleep):
+def run(api, bot, stop=lambda: False, pausa=time.sleep, tarea=None):
     api.call('setMyCommands', commands=[{'command': c, 'description': d} for c, d in COMANDOS])
     log('bot_iniciado')
     offset, limitador, espera = None, Limitador(), 5
     while not stop():
+        if tarea:
+            try: tarea()
+            except Exception as exc:  # una falla de alertas nunca detiene el bot
+                log(f'evaluacion_fallida type={type(exc).__name__}')
         try:
             updates = api.call('getUpdates', offset=offset, timeout=30, allowed_updates=['message'])
             espera = 5
@@ -235,8 +240,10 @@ def main(argv=None):
     from data_ingestion.windows_credentials import load_key
     api = Telegram(load_key(args.key_file))
     conn = store.conectar(args.db)
+    vigilante = evaluar.Vigilante(lambda: evaluar.evaluar(conn, api, args.mediciones, log=log),
+                                  lambda: evaluar.marca_sincronizacion(args.mediciones))
     try:
-        run(api, Bot(conn, args.mediciones))
+        run(api, Bot(conn, args.mediciones), tarea=vigilante)
     except KeyboardInterrupt:
         log('bot_detenido')
     finally:
