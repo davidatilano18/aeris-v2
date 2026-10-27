@@ -95,3 +95,4 @@ body.motion-paused .reveal{opacity:1!important;transform:none!important;transiti
 .estado-period{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin:18px 0 2px;font-weight:500}.estado-period:first-child{margin-top:0}
 .estado-panel .mini-label{font-size:9px;letter-spacing:.12em;color:var(--teal);margin:0}
 .estado-aprende{display:inline-block;margin:4px 0 12px;font-size:13px;color:#75efd2;text-decoration:none;border-bottom:1px solid #75efd255}.estado-aprende:hover,.estado-aprende:focus-visible{border-bottom-color:#75efd2}
+.nav-acciones{display:flex;align-items:center;gap:10px;flex-shrink:0}.nav-cuenta{color:var(--teal);border-color:#3d7f74}@media(max-width:1100px){.nav-tag.nav-cuenta{display:inline-block;white-space:nowrap}}

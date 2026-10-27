@@ -21,7 +21,7 @@
 <header class="site-header"><div class="wrap nav-row">
   <a class="brand" href="/inicio" aria-label="AERIS, inicio"><span class="brand-icon" aria-hidden="true">≋</span><span>AERIS<small>INTELIGENCIA AMBIENTAL</small></span></a>
   <nav aria-label="Navegación principal"><a href="#estado">¿Cómo está?</a><a href="/inicio/aprende">Aprende</a><a href="#panorama">Panorama</a><a href="#metodo">Cómo trabajamos</a><a href="#mapa">Mapa</a><a href="#tiempo">Tiempo</a><a href="/inicio/explorar">Laboratorio</a><a href="#investigacion">Investigación</a><a href="/inicio/datos">Datos</a></nav>
-  <a class="nav-tag" href="/inicio/anterior">Comparar versión anterior ↗</a>
+  <div class="nav-acciones">{% include 'cuentas/_enlace.html' %}<a class="nav-tag" href="/inicio/anterior">Comparar versión anterior ↗</a></div>
 </div></header>
 <main id="main">
 {% if demo_bundle %}<div class="wrap demo-cut">DEMOSTRACIÓN · Corte preparado {{ local_date(demo_bundle.created_utc) }}. Consulta la fecha ambiental de cada serie.{% if demo_bundle.offline %} Sin conexión externa.{% endif %}</div>{% endif %}

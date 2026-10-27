@@ -1,0 +1,1 @@
+{% if cuentas_activas %}{% set u_nav = usuario_actual() %}{% if u_nav %}<a class="nav-tag nav-cuenta" href="{{ url_for('cuentas.perfil') }}" title="{{ u_nav.correo }}">Mi cuenta</a>{% else %}<a class="nav-tag nav-cuenta" href="{{ url_for('cuentas.entrar') }}">Iniciar sesión</a>{% endif %}{% endif %}

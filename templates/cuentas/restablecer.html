@@ -1,0 +1,13 @@
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Nueva contraseña{% endblock %}
+{% block contenido %}
+<p class="eyebrow">CUENTA AERIS</p>
+<h1>Elige una contraseña <em>nueva.</em></h1>
+{% include 'cuentas/_error.html' %}
+<form method="post" class="cuenta-form" novalidate>
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <label>Contraseña nueva<input type="password" name="contrasena" autocomplete="new-password" minlength="10" maxlength="128" required><small>Mínimo 10 caracteres.</small></label>
+  <label>Repite la contraseña<input type="password" name="confirmar" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+  <button class="button primary" type="submit">Guardar contraseña</button>
+</form>
+{% endblock %}

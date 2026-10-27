@@ -1,0 +1,17 @@
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Crear cuenta{% endblock %}
+{% block contenido %}
+<p class="eyebrow">CUENTA AERIS</p>
+<h1>Crea tu <em>cuenta.</em></h1>
+<p class="cuenta-lead">Guarda tus estaciones, configura alertas y descarga datos. Solo te pedimos un correo.</p>
+{% include 'cuentas/_error.html' %}
+<form method="post" class="cuenta-form" novalidate>
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <label>Correo<input type="email" name="correo" value="{{ correo or '' }}" autocomplete="email" maxlength="254" required></label>
+  <label>Contraseña<input type="password" name="contrasena" autocomplete="new-password" minlength="10" maxlength="128" required><small>Mínimo 10 caracteres. Una frase es más segura y fácil de recordar.</small></label>
+  <label>Repite la contraseña<input type="password" name="confirmar" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+  <label class="cuenta-check"><input type="checkbox" name="acepto" value="si" required><span>Leí y acepto el <a href="{{ url_for('cuentas.privacidad') }}" target="_blank" rel="noopener">aviso de privacidad</a>.</span></label>
+  <button class="button primary" type="submit">Crear cuenta</button>
+</form>
+<p class="cuenta-pie">¿Ya tienes cuenta? <a href="{{ url_for('cuentas.entrar') }}">Inicia sesión</a></p>
+{% endblock %}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{% block titulo %}Cuenta{% endblock %} · AERIS</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static',filename='logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static',filename='v2/css/home.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static',filename='v2/css/cuentas.css') }}">
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+<header class="site-header"><div class="wrap nav-row">
+  <a class="brand" href="/inicio" aria-label="AERIS, inicio"><span class="brand-icon" aria-hidden="true">≋</span><span>AERIS<small>INTELIGENCIA AMBIENTAL</small></span></a>
+  <nav aria-label="Navegación principal"><a href="/inicio#estado">¿Cómo está?</a><a href="/inicio/aprende">Aprende</a><a href="/inicio/explorar">Laboratorio</a><a href="/inicio/datos">Datos</a></nav>
+  {% include 'cuentas/_enlace.html' %}
+</div></header>
+<main id="main" class="wrap cuenta-main">
+  <section class="cuenta-tarjeta{% block ancho %}{% endblock %}">
+    {% block contenido %}{% endblock %}
+  </section>
+</main>
+</body>
+</html>

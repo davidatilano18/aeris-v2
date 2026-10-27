@@ -20,6 +20,9 @@ ROOT = Path(__file__).resolve().parent
 app = Flask(__name__)
 from aeris_web.config import configure
 DB = configure(app, ROOT)
+from cuentas.web import configurar as configurar_cuentas
+# Base propia de usuarios; en beta quedan apagadas salvo configuración explícita.
+CUENTAS_DB = configurar_cuentas(app, ROOT, os.environ)
 
 STATIONS = SELECTED
 

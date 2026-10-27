@@ -1,0 +1,38 @@
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Mi cuenta{% endblock %}
+{% block ancho %} ancha{% endblock %}
+{% block contenido %}
+<p class="eyebrow">MI CUENTA</p>
+<h1>Hola, <em>{{ u.correo }}</em></h1>
+{% if aviso == 'contrasena' %}<p class="cuenta-ok" role="status">Contraseña actualizada. Cerramos tus otras sesiones.</p>{% endif %}
+{% include 'cuentas/_error.html' %}
+<dl class="cuenta-datos">
+  <div><dt>Correo</dt><dd>{{ u.correo }}</dd></div>
+  <div><dt>Tipo de cuenta</dt><dd>{{ 'Administración' if u.rol == 'admin' else 'Usuario' }}</dd></div>
+  <div><dt>Miembro desde</dt><dd>{{ u.creado_utc[:10] }}</dd></div>
+</dl>
+<section class="cuenta-proximo" aria-label="Próximamente">
+  <h2>Próximamente</h2>
+  <ul><li>Estaciones favoritas y tu umbral personal</li><li>Alertas por Telegram</li><li>Descargas ampliadas y clave de API</li></ul>
+</section>
+<form method="post" action="{{ url_for('cuentas.salir') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="button outline" type="submit">Cerrar sesión</button></form>
+<details class="cuenta-bloque">
+  <summary>Cambiar contraseña</summary>
+  <form method="post" action="{{ url_for('cuentas.contrasena') }}" class="cuenta-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <label>Contraseña actual<input type="password" name="actual" autocomplete="current-password" maxlength="128" required></label>
+    <label>Contraseña nueva<input type="password" name="nueva" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+    <label>Repite la nueva<input type="password" name="confirmar" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+    <button class="button primary" type="submit">Cambiar contraseña</button>
+  </form>
+</details>
+<details class="cuenta-bloque peligro">
+  <summary>Borrar mi cuenta</summary>
+  <p>Se borran tu cuenta y todos sus datos. No se puede deshacer.</p>
+  <form method="post" action="{{ url_for('cuentas.borrar') }}" class="cuenta-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <label>Escribe tu contraseña para confirmar<input type="password" name="contrasena" autocomplete="current-password" maxlength="128" required></label>
+    <button class="button peligro" type="submit">Borrar mi cuenta</button>
+  </form>
+</details>
+{% endblock %}
