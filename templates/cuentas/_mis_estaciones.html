@@ -1,0 +1,19 @@
+{% if cuentas_activas %}{% set me = mis_estaciones() %}{% if me %}
+<section class="wrap mis-estaciones" aria-labelledby="mis-estaciones-titulo">
+  <div class="mis-cabeza">
+    <div><p class="eyebrow">TU CUENTA</p><h2 id="mis-estaciones-titulo">Tus estaciones</h2></div>
+    <p>Comparadas con {{ 'tu umbral' if me.personal else 'la referencia de la NOM-025' }}: <strong>{{ '%g'|format(me.umbral) }} µg/m³</strong> · <a href="{{ url_for('cuentas.estaciones') }}">Editar</a></p>
+  </div>
+  {% if not me.elegidas %}<p class="mis-vacio">Aún no eliges estaciones. <a href="{{ url_for('cuentas.estaciones') }}">Elige las que te importan →</a></p>
+  {% elif not me.disponible %}<p class="mis-vacio">No pudimos leer las mediciones en este momento.</p>
+  {% else %}<ul class="mis-lista">
+    {% for e in me.filas %}<li class="{{ 'supera' if e.supera else 'debajo' }}">
+      <span class="mis-nombre">{{ e.nombre }}<small>{{ local_date(e.fecha_utc.isoformat().replace('+00:00', 'Z')) }}{% if e.revision %} · en revisión{% endif %}</small></span>
+      <strong>{{ '%.0f'|format(e.valor) }} <small>µg/m³</small></strong>
+      <span class="mis-estado">{{ 'Por encima' if e.supera else 'Por debajo' }}</span>
+    </li>{% endfor %}
+  </ul>
+  {% if me.sin_datos %}<p class="mis-vacio">{{ me.sin_datos }} de tus estaciones no tiene datos en los últimos 7 días.</p>{% endif %}
+  <p class="mis-nota">Lecturas horarias: no son un índice de salud.</p>{% endif %}
+</section>
+{% endif %}{% endif %}

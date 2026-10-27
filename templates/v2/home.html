@@ -64,6 +64,7 @@
   </div>
   <div class="wrap hero-bottom"><span>DATOS REALES. PREGUNTAS ABIERTAS.</span><button id="motionToggle" type="button" aria-pressed="false">Pausar movimiento</button><a href="#panorama" aria-label="Ir al panorama de datos">DESCUBRE LO QUE SABEMOS ↓</a></div>
 </section>{% endif %}
+{% include 'cuentas/_mis_estaciones.html' %}
 {% if estado and estado.resumen %}{% set r = estado.resumen %}
 <section class="section wrap estado" id="estado" aria-labelledby="estado-title">
   <div class="section-head"><div><p class="eyebrow">01 / LA RESPUESTA CORTA</p><h2 id="estado-title">¿Cómo está el aire en Querétaro?</h2></div><p>Promedios diarios de PM2.5 comparados con la norma mexicana.<br>Cada estación por separado; sin promedios inventados.</p></div>

@@ -12,6 +12,9 @@
 !aeris_web/*.py
 !cuentas/
 !cuentas/*.py
+!alertas/
+!alertas/__init__.py
+!alertas/lecturas.py
 !data_ingestion/
 !data_ingestion/__init__.py
 !data_ingestion/catalog.py

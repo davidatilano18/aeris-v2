@@ -47,6 +47,7 @@ def main():
                   'data_ingestion/__init__.py', 'data_ingestion/catalog.py', 'data_ingestion/visibility.py')]
     candidates += list((ROOT / 'aeris_web').glob('*.py'))
     candidates += list((ROOT / 'cuentas').glob('*.py'))
+    candidates += [ROOT / 'alertas/__init__.py', ROOT / 'alertas/lecturas.py']
     candidates += [p for folder in ('templates', 'static/v2') for p in (ROOT / folder).rglob('*') if p.is_file()]
     release_findings = []
     for path in candidates:

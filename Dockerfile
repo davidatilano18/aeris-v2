@@ -8,6 +8,7 @@ COPY railway_start.py ./
 COPY railway_acceptance.py ./
 COPY aeris_web/ ./aeris_web/
 COPY cuentas/ ./cuentas/
+COPY alertas/__init__.py alertas/lecturas.py ./alertas/
 COPY data_ingestion/__init__.py data_ingestion/catalog.py data_ingestion/visibility.py ./data_ingestion/
 COPY data/openaq_stations.json ./data/openaq_stations.json
 COPY templates/ ./templates/

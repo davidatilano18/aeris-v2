@@ -25,6 +25,7 @@ def release_files(root=ROOT):
     selected = {root / name for name in explicit}
     selected.update((root / 'aeris_web').glob('*.py'))
     selected.update((root / 'cuentas').glob('*.py'))
+    selected.update({root / 'alertas/__init__.py', root / 'alertas/lecturas.py'})
     for folder in ('templates/v2', 'templates/cuentas', 'static/v2'):
         selected.update(p for p in (root / folder).rglob('*') if p.is_file())
     return sorted(p.relative_to(root).as_posix() for p in selected)

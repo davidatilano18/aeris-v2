@@ -4,6 +4,7 @@
 {% block contenido %}
 <p class="eyebrow">MI CUENTA</p>
 <h1>Hola, <em>{{ u.correo }}</em></h1>
+{% if aviso == 'estaciones' %}<p class="cuenta-ok" role="status">Guardamos tus estaciones. Las verás primero en la <a href="/inicio#mis-estaciones-titulo">portada</a>.</p>{% endif %}
 {% if aviso == 'contrasena' %}<p class="cuenta-ok" role="status">Contraseña actualizada. Cerramos tus otras sesiones.</p>{% endif %}
 {% include 'cuentas/_error.html' %}
 <dl class="cuenta-datos">
@@ -11,9 +12,17 @@
   <div><dt>Tipo de cuenta</dt><dd>{{ 'Administración' if u.rol == 'admin' else 'Usuario' }}</dd></div>
   <div><dt>Miembro desde</dt><dd>{{ u.creado_utc[:10] }}</dd></div>
 </dl>
+{% set me = mis_estaciones() %}
+<section class="cuenta-mias" aria-labelledby="mias-titulo">
+  <h2 id="mias-titulo">Mis estaciones</h2>
+  {% if me.filas %}<ul>{% for e in me.filas %}<li><span>{{ e.nombre }}</span><strong class="{{ 'supera' if e.supera else '' }}">{{ '%.0f'|format(e.valor) }} µg/m³</strong></li>{% endfor %}</ul>
+  <p class="cuenta-nota">Umbral: {{ '%g'|format(me.umbral) }} µg/m³ ({{ 'personal' if me.personal else 'referencia NOM-025' }}).</p>
+  {% else %}<p class="cuenta-nota">Aún no eliges estaciones.</p>{% endif %}
+  <p><a class="button outline" href="{{ url_for('cuentas.estaciones') }}">{{ 'Editar estaciones' if me.elegidas else 'Elegir estaciones' }}</a></p>
+</section>
 <section class="cuenta-proximo" aria-label="Próximamente">
   <h2>Próximamente</h2>
-  <ul><li>Estaciones favoritas y tu umbral personal</li><li>Alertas por Telegram</li><li>Descargas ampliadas y clave de API</li></ul>
+  <ul><li>Alertas por Telegram desde tu cuenta</li><li>Descargas ampliadas y clave de API</li></ul>
 </section>
 <form method="post" action="{{ url_for('cuentas.salir') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="button outline" type="submit">Cerrar sesión</button></form>
 <details class="cuenta-bloque">

@@ -260,3 +260,83 @@ def _beta_app():
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class FavoritosTests(unittest.TestCase):
+    """Fase C: estaciones favoritas y umbral personal."""
+
+    def setUp(self):
+        from datetime import datetime, timezone
+        from tests.test_alertas_bot import mediciones
+        self.folder = tempfile.TemporaryDirectory()
+        hora = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0) - timedelta(hours=2)
+        stamp = hora.isoformat().replace('+00:00', 'Z')
+        self.med = Path(self.folder.name) / 'mediciones.db'
+        mediciones(self.med, [(10, stamp, 31.4), (20, stamp, 12)])  # 10 Josefa Vergara, 20 Corregidora
+        self.correos = []
+        self.app = crear_app(self.folder.name, self.correos)
+        self.app.extensions['aeris_v2_database'] = lambda: self.med
+        self.client = self.app.test_client()
+        web = WebTests(); web.client, web.correos, web.app = self.client, self.correos, self.app
+        web.cuenta_verificada(); web.entrar()
+
+    def tearDown(self):
+        self.folder.cleanup()
+
+    def token(self): return csrf(self.client.get('/cuenta/estaciones').get_data(as_text=True))
+
+    def test_lists_active_stations_with_reading(self):
+        html = self.client.get('/cuenta/estaciones').get_data(as_text=True)
+        self.assertIn('Corregidora', html)
+        self.assertIn('Josefa Vergara', html)
+        self.assertNotIn('Histórica', html)
+        self.assertEqual(302, self.app.test_client().get('/cuenta/estaciones').status_code)
+
+    def test_save_favorites_and_personal_threshold(self):
+        r = self.client.post('/cuenta/estaciones', data={'csrf': self.token(), 'sensor': ['20', '10'],
+                                                         'modo_umbral': 'personal', 'umbral': '30,5'})
+        self.assertEqual('/cuenta?aviso=estaciones', r.headers['Location'])
+        perfil = self.client.get('/cuenta?aviso=estaciones').get_data(as_text=True)
+        self.assertIn('Guardamos tus estaciones', perfil)
+        self.assertIn('Umbral: 30.5 µg/m³ (personal)', perfil)
+        self.assertIn('class="supera">31 µg/m³', perfil)
+        r = self.client.post('/cuenta/estaciones', data={'csrf': self.token(), 'sensor': ['20'], 'modo_umbral': 'referencia', 'umbral': '99'})
+        perfil = self.client.get('/cuenta').get_data(as_text=True)
+        self.assertIn('Umbral: 25 µg/m³ (referencia NOM-025)', perfil)
+        self.assertNotIn('Josefa Vergara', perfil)
+
+    def test_rejects_unknown_station_and_bad_threshold(self):
+        for datos, mensaje in (({'sensor': ['999']}, 'no existe'),
+                               ({'sensor': ['10'], 'modo_umbral': 'personal', 'umbral': 'mucho'}, 'entre 0 y 1000'),
+                               ({'sensor': ['10'], 'modo_umbral': 'personal', 'umbral': '0'}, 'entre 0 y 1000')):
+            r = self.client.post('/cuenta/estaciones', data={'csrf': self.token(), **datos})
+            self.assertEqual(400, r.status_code)
+            self.assertIn(mensaje, r.get_data(as_text=True))
+
+    def test_home_panel(self):
+        from flask import render_template
+        local = lambda v: v[:16]
+        self.client.post('/cuenta/estaciones', data={'csrf': self.token(), 'sensor': ['10', '20']})
+        with self.client:
+            self.client.get('/cuenta')
+            html = render_template('cuentas/_mis_estaciones.html', local_date=local)
+        self.assertIn('Tus estaciones', html)
+        self.assertIn('la referencia de la NOM-025', html)
+        self.assertEqual(1, html.count('class="supera"'))
+        self.assertEqual(1, html.count('class="debajo"'))
+        with self.app.test_request_context():
+            self.assertEqual('', render_template('cuentas/_mis_estaciones.html', local_date=local).strip())
+
+    def test_migration_from_v1_keeps_users(self):
+        path = Path(self.folder.name) / 'v1.db'
+        conn = sqlite3.connect(path)
+        v1 = store.SCHEMA.split('CREATE TABLE favoritos')[0].replace(
+            ',\n    umbral REAL CHECK(umbral IS NULL OR (umbral > 0 AND umbral < 1000)))', ')')
+        conn.executescript(v1 + "PRAGMA user_version=1; INSERT INTO usuarios(correo,contrasena_hash,creado_utc) VALUES ('a@b.mx','x','2026-10-27T00:00:00Z');")
+        conn.close()
+        conn = store.conectar(path)
+        self.assertEqual(2, conn.execute('PRAGMA user_version').fetchone()[0])
+        self.assertIsNone(store.por_correo(conn, 'a@b.mx')['umbral'])
+        store.guardar_preferencias(conn, 1, [5], 40, {5})
+        self.assertEqual([5], store.favoritos(conn, 1))
+        conn.close()

@@ -18,6 +18,7 @@ from . import correo, store
 
 blueprint = Blueprint('cuentas', __name__)
 ERROR_ENTRAR = 'Correo o contraseña incorrectos.'
+UMBRAL_REFERENCIA = 25.0  # NOM-025-SSA1-2021, referencia de 24 h vigente desde enero de 2026
 DEMASIADOS = 'Demasiados intentos. Espera unos minutos y vuelve a probar.'
 
 
@@ -36,7 +37,8 @@ def configurar(app, root, environ):
     app.extensions['cuentas_db'] = db
     app.extensions.setdefault('cuentas_enviar', correo.consola)
     app.register_blueprint(blueprint)
-    app.context_processor(lambda: {'cuentas_activas': True, 'usuario_actual': usuario_actual})
+    app.context_processor(lambda: {'cuentas_activas': True, 'usuario_actual': usuario_actual,
+                                   'mis_estaciones': mis_estaciones})
     return db
 
 
@@ -283,6 +285,58 @@ def borrar():
     session.clear()
     return pagina('cuentas/mensaje.html', titulo='Cuenta borrada',
                   texto='Borramos tu cuenta y todos sus datos.', enlace='/inicio', enlace_texto='Volver al inicio')
+
+
+def lecturas_actuales():
+    """Estaciones activas con su última lectura (solo lectura), o None si no se pueden leer."""
+    from alertas import lecturas
+    try:
+        return lecturas.estaciones(current_app.extensions['aeris_v2_database']())
+    except (sqlite3.Error, OSError, RuntimeError, ValueError, KeyError):
+        current_app.logger.warning('cuentas_lecturas_no_disponibles')
+        return None
+
+
+def umbral_de(u): return u['umbral'] if u['umbral'] is not None else UMBRAL_REFERENCIA
+
+
+def mis_estaciones():
+    """Panel de la portada: None sin sesión; si no, favoritas con lectura y comparación con el umbral."""
+    u = usuario_actual()
+    if u is None:
+        return None
+    ids = store.favoritos(conexion(), u['id'])
+    lista = lecturas_actuales() if ids else []
+    por_id = {e['sensor_id']: e for e in lista or []}
+    umbral = umbral_de(u)
+    filas = [{**por_id[s], 'supera': por_id[s]['valor'] > umbral} for s in ids if s in por_id]
+    return {'umbral': umbral, 'personal': u['umbral'] is not None, 'filas': filas, 'elegidas': len(ids),
+            'sin_datos': len(ids) - len(filas), 'disponible': lista is not None}
+
+
+@blueprint.route('/cuenta/estaciones', methods=['GET', 'POST'])
+@requiere_sesion
+def estaciones():
+    u, conn = usuario_actual(), conexion()
+    lista = lecturas_actuales()
+    if lista is None:
+        return pagina('cuentas/mensaje.html', 503, titulo='Estaciones no disponibles',
+                      texto='No pudimos leer las estaciones en este momento. Intenta más tarde.')
+    elegidas = set(store.favoritos(conn, u['id']))
+    if request.method == 'POST':
+        texto = request.form.get('umbral', '').strip().replace(',', '.')
+        try:
+            umbral = None if request.form.get('modo_umbral') != 'personal' or not texto else float(texto)
+        except ValueError:
+            umbral = -1  # lo rechaza la validación con un mensaje claro
+        try:
+            seleccion = [int(x) for x in request.form.getlist('sensor') if x.isdigit()]
+            store.guardar_preferencias(conn, u['id'], seleccion, umbral, {e['sensor_id'] for e in lista})
+        except store.ErrorCuenta as exc:
+            return pagina('cuentas/estaciones.html', 400, u=u, lista=lista, elegidas=set(seleccion),
+                          referencia=UMBRAL_REFERENCIA, error=str(exc))
+        return redirect(url_for('cuentas.perfil', aviso='estaciones'))
+    return pagina('cuentas/estaciones.html', u=u, lista=lista, elegidas=elegidas, referencia=UMBRAL_REFERENCIA)
 
 
 @blueprint.get('/privacidad')

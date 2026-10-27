@@ -1,0 +1,33 @@
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Mis estaciones{% endblock %}
+{% block ancho %} ancha{% endblock %}
+{% block contenido %}
+<p class="eyebrow">MI CUENTA / ESTACIONES</p>
+<h1>Elige tus <em>estaciones.</em></h1>
+<p class="cuenta-lead">Aparecerán primero en la portada, con su última lectura comparada con tu umbral.</p>
+{% include 'cuentas/_error.html' %}
+<form method="post" class="cuenta-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <fieldset class="cuenta-estaciones">
+    <legend>Estaciones con datos en los últimos 7 días</legend>
+    {% for e in lista %}
+    <label class="cuenta-estacion">
+      <input type="checkbox" name="sensor" value="{{ e.sensor_id }}"{% if e.sensor_id in elegidas %} checked{% endif %}>
+      <span><strong>{{ e.nombre }}</strong><small>{{ e.municipio }}</small></span>
+      <span class="cuenta-lectura">{{ '%.0f'|format(e.valor) }} <small>µg/m³</small></span>
+    </label>
+    {% else %}
+    <p class="cuenta-nota">No hay estaciones con datos recientes.</p>
+    {% endfor %}
+  </fieldset>
+  <fieldset class="cuenta-umbral">
+    <legend>Umbral para comparar</legend>
+    <label class="cuenta-check"><input type="radio" name="modo_umbral" value="referencia"{% if u.umbral is none %} checked{% endif %}><span>Referencia de la NOM-025-SSA1-2021: <strong>{{ '%g'|format(referencia) }} µg/m³</strong></span></label>
+    <label class="cuenta-check"><input type="radio" name="modo_umbral" value="personal"{% if u.umbral is not none %} checked{% endif %}><span>Mi propio umbral:</span></label>
+    <label class="cuenta-umbral-valor">µg/m³<input type="text" inputmode="decimal" name="umbral" value="{{ '%g'|format(u.umbral) if u.umbral is not none else '' }}" maxlength="6" aria-label="Umbral personal en µg/m³"></label>
+    <small>La referencia de la norma es para promedios de 24 horas; aquí se compara cada lectura horaria, así que es una guía, no un índice de salud.</small>
+  </fieldset>
+  <button class="button primary" type="submit">Guardar</button>
+</form>
+<p class="cuenta-pie"><a href="{{ url_for('cuentas.perfil') }}">Volver a mi cuenta</a></p>
+{% endblock %}

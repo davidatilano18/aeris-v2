@@ -45,3 +45,13 @@ La base de mediciones sigue en solo lectura; `cuentas.store.conectar()` se niega
 
 Abre `http://127.0.0.1:5000/cuenta/registro`. El enlace de verificación aparece en
 la consola del servidor, entre `--- correo local (no enviado) ---` y `--- fin del correo ---`.
+
+## Fase C: estaciones favoritas
+
+- `/cuenta/estaciones`: la persona marca hasta 20 estaciones con datos en los últimos
+  7 días (vía `alertas/lecturas.py`, solo lectura) y elige umbral: la referencia de
+  25 µg/m³ (NOM-025-SSA1-2021, 24 h) o uno propio.
+- `/inicio` muestra «Tus estaciones» antes de «¿Cómo está el aire?» solo con sesión
+  iniciada: última lectura horaria, hora local y si queda por encima o por debajo del umbral.
+- `/cuenta` resume las estaciones elegidas.
+- Esquema v2 (`favoritos`, `usuarios.umbral`); una base v1 se migra sola al abrir.

@@ -11,7 +11,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = ROOT / 'data' / 'aeris_usuarios.db'
 MEDICIONES_DB = ROOT / 'data' / 'aeris_air_quality.db'
-VERSION = 1
+VERSION = 2
+MAX_FAVORITOS = 20
 ROLES = ('usuario', 'admin')
 MIN_CONTRASENA, MAX_CONTRASENA = 10, 128  # el máximo acota el costo de scrypt
 VIGENCIA = {'verificar': timedelta(hours=24), 'recuperar': timedelta(hours=1)}
@@ -32,7 +33,8 @@ CREATE TABLE usuarios (
     activo INTEGER NOT NULL DEFAULT 1 CHECK(activo IN (0,1)),
     sesion_version INTEGER NOT NULL DEFAULT 1,
     creado_utc TEXT NOT NULL,
-    ultimo_acceso_utc TEXT);
+    ultimo_acceso_utc TEXT,
+    umbral REAL CHECK(umbral IS NULL OR (umbral > 0 AND umbral < 1000)));
 CREATE TABLE tokens (
     hash TEXT PRIMARY KEY,
     usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -45,7 +47,22 @@ CREATE TABLE intentos (
     clave TEXT NOT NULL,
     momento_utc TEXT NOT NULL);
 CREATE INDEX intentos_por_clave ON intentos(clave, momento_utc);
+CREATE TABLE favoritos (
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    sensor_id INTEGER NOT NULL,
+    creado_utc TEXT NOT NULL,
+    PRIMARY KEY(usuario_id, sensor_id));
 '''
+# Migraciones desde cada versión anterior; se aplican en orden dentro de una transacción.
+MIGRACIONES = {
+    1: '''ALTER TABLE usuarios ADD COLUMN umbral REAL CHECK(umbral IS NULL OR (umbral > 0 AND umbral < 1000));
+CREATE TABLE favoritos (
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    sensor_id INTEGER NOT NULL,
+    creado_utc TEXT NOT NULL,
+    PRIMARY KEY(usuario_id, sensor_id));
+''',
+}
 
 
 class ErrorCuenta(ValueError):
@@ -71,6 +88,10 @@ def conectar(path=DEFAULT_DB):
                 raise sqlite3.DatabaseError('La base no es de cuentas AERIS')
             with conn:
                 conn.executescript(SCHEMA + f'PRAGMA user_version={VERSION};')
+        elif version in MIGRACIONES:
+            with conn:
+                for v in range(version, VERSION):
+                    conn.executescript('BEGIN;' + MIGRACIONES[v] + f'PRAGMA user_version={v + 1};COMMIT;')
         elif version != VERSION:
             raise sqlite3.DatabaseError(f'Versión de esquema no soportada: {version}')
         return conn
@@ -224,3 +245,25 @@ def limitar(conn, clave, tipo, now=None):
 def olvidar_intentos(conn, clave, tipo):
     with conn:
         conn.execute('DELETE FROM intentos WHERE clave=?', (f'{tipo}:{clave}',))
+
+
+def favoritos(conn, usuario_id):
+    return [r[0] for r in conn.execute('SELECT sensor_id FROM favoritos WHERE usuario_id=? ORDER BY creado_utc,sensor_id',
+                                       (int(usuario_id),))]
+
+
+def guardar_preferencias(conn, usuario_id, sensores, umbral, validos, now=None):
+    """Reemplaza los favoritos (solo estaciones conocidas) y el umbral personal (None = referencia)."""
+    sensores = list(dict.fromkeys(int(s) for s in sensores))
+    if any(s not in validos for s in sensores):
+        raise ErrorCuenta('Elegiste una estación que no existe.')
+    if len(sensores) > MAX_FAVORITOS:
+        raise ErrorCuenta(f'Puedes guardar hasta {MAX_FAVORITOS} estaciones.')
+    if umbral is not None and not 0 < float(umbral) < 1000:
+        raise ErrorCuenta('El umbral debe estar entre 0 y 1000 µg/m³.')
+    momento = stamp(now or utc_now())
+    with conn:
+        conn.execute('DELETE FROM favoritos WHERE usuario_id=?', (int(usuario_id),))
+        conn.executemany('INSERT INTO favoritos(usuario_id,sensor_id,creado_utc) VALUES (?,?,?)',
+                         [(int(usuario_id), s, momento) for s in sensores])
+        conn.execute('UPDATE usuarios SET umbral=? WHERE id=?', (None if umbral is None else float(umbral), int(usuario_id)))

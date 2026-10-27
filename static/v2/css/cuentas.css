@@ -13,7 +13,7 @@
 .cuenta-check{grid-template-columns:auto 1fr;align-items:start;gap:10px!important}
 .cuenta-check input{width:18px;height:18px;margin-top:2px;accent-color:var(--teal)}
 .cuenta-form a,.cuenta-pie a,.cuenta-texto a{color:var(--teal)}
-.cuenta-form .button,.cuenta-tarjeta form .button{border:0;cursor:pointer;width:max-content}
+.cuenta-tarjeta form .button{cursor:pointer;width:max-content}.cuenta-tarjeta form .button.primary,.cuenta-tarjeta form .button.peligro{border:0}
 .cuenta-pie,.cuenta-nota{font-size:12px;color:var(--muted)}
 .cuenta-error,.cuenta-ok,.cuenta-borrador{border-radius:6px;padding:12px 14px;font-size:13px}
 .cuenta-error{background:#442d2d;border:1px solid #a9877a;color:#ffe3dc}
@@ -32,3 +32,16 @@
 .cuenta-texto p{color:var(--soft);font-size:14px}
 .nav-cuenta{color:var(--teal);border-color:#3d7f74}
 @media (max-width:640px){.cuenta-main{padding-block:24px 48px}.cuenta-tarjeta{padding:24px 20px}.cuenta-tarjeta:before{left:20px}.wrap.cuenta-main{width:calc(100% - 32px)}}
+.cuenta-estaciones,.cuenta-umbral{border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:0;display:grid;gap:8px;min-width:0}
+.cuenta-estaciones legend,.cuenta-umbral legend{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 6px}
+.cuenta-estacion{display:grid!important;grid-template-columns:auto 1fr auto;align-items:center;gap:12px!important;padding:8px 0;border-bottom:1px solid #29435166;color:var(--ink)!important;font-size:14px!important}
+.cuenta-estacion:last-child{border-bottom:0}
+.cuenta-estacion input{width:18px;height:18px;accent-color:var(--teal)}
+.cuenta-estacion small{display:block;color:var(--muted);font-size:11px}
+.cuenta-lectura{font-variant-numeric:tabular-nums;font-size:16px;white-space:nowrap}
+.cuenta-lectura small{display:inline;font-size:11px;color:var(--muted)}
+.cuenta-umbral-valor{display:flex!important;flex-direction:row-reverse;justify-content:flex-end;align-items:center;gap:8px!important;margin-left:28px}
+.cuenta-umbral-valor input{font:inherit;width:90px;color:var(--ink);background:#081724;border:1px solid #3b5a68;border-radius:6px;padding:8px 10px}
+.cuenta-mias ul{list-style:none;padding:0;margin:0 0 8px}
+.cuenta-mias li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.cuenta-mias .supera{color:#ffb38a}
