@@ -10,7 +10,7 @@ publicado sigue en el repositorio [AERIS](https://github.com/davidatilano18/AERI
 
 **Autor y responsable:** David Israel Atilano Quiroz
 
-**Colaboradores:** Ricardo Leonel Ordaz Aguilar y Javier Yael Marvaez Olguin
+**Colaboradores:** Ricardo Leonel Ordaz Aguilar y Javier Yael Narváez Olguín
 
 ## Novedades de la v2 (prototipo local)
 
