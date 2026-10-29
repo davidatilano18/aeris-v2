@@ -5,6 +5,7 @@
 <p class="eyebrow">MI CUENTA</p>
 <h1>Hola, <em>{{ u.correo }}</em></h1>
 {% if aviso == 'estaciones' %}<p class="cuenta-ok" role="status">Guardamos tus estaciones. Las verás primero en la <a href="/inicio#mis-estaciones-titulo">portada</a>.</p>{% endif %}
+{% if aviso == 'telegram' %}<p class="cuenta-ok" role="status">Desconectamos Telegram. Dejarás de recibir avisos en ese chat.</p>{% endif %}
 {% if aviso == 'contrasena' %}<p class="cuenta-ok" role="status">Contraseña actualizada. Cerramos tus otras sesiones.</p>{% endif %}
 {% include 'cuentas/_error.html' %}
 <dl class="cuenta-datos">
@@ -20,10 +21,24 @@
   {% else %}<p class="cuenta-nota">Aún no eliges estaciones.</p>{% endif %}
   <p><a class="button outline" href="{{ url_for('cuentas.estaciones') }}">{{ 'Editar estaciones' if me.elegidas else 'Elegir estaciones' }}</a></p>
 </section>
+<section class="cuenta-telegram" aria-labelledby="telegram-titulo">
+  <h2 id="telegram-titulo">Alertas por Telegram</h2>
+  {% if enlace_telegram %}
+  <p class="cuenta-ok" role="status">Abre este enlace en el celular o la computadora donde usas Telegram y pulsa «Iniciar». Vence en 15 minutos y sirve una sola vez.</p>
+  <p><a class="button primary" href="{{ enlace_telegram }}" target="_blank" rel="noopener">Abrir @{{ config.AERIS_TELEGRAM_BOT }} en Telegram</a></p>
+  {% elif telegram %}
+  <p>Conectado desde el {{ telegram.vinculado_utc[:10] }}. Te avisaremos cuando tus estaciones superen tu umbral{% if not me.elegidas %} (aún no eliges estaciones){% endif %}. En el chat puedes usar /pausa y /silencio.</p>
+  <form method="post" action="{{ url_for('cuentas.desconectar_telegram') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="button outline" type="submit">Desconectar Telegram</button></form>
+  {% else %}
+  <p>Recibe un aviso cuando una de tus estaciones supere tu umbral y cuando vuelva a bajar. Solo guardamos el número de tu chat.</p>
+  <form method="post" action="{{ url_for('cuentas.conectar_telegram') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="button primary" type="submit">Conectar Telegram</button></form>
+  {% endif %}
+</section>
 <section class="cuenta-proximo" aria-label="Próximamente">
   <h2>Próximamente</h2>
-  <ul><li>Alertas por Telegram desde tu cuenta</li><li>Descargas ampliadas y clave de API</li></ul>
+  <ul><li>Descargas ampliadas y clave de API</li></ul>
 </section>
+{% if u.rol == 'admin' %}<p><a class="button primary" href="{{ url_for('cuentas.admin_inicio') }}">Panel de administración</a></p>{% endif %}
 <form method="post" action="{{ url_for('cuentas.salir') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="button outline" type="submit">Cerrar sesión</button></form>
 <details class="cuenta-bloque">
   <summary>Cambiar contraseña</summary>

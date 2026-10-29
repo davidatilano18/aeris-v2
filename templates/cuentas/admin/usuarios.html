@@ -1,0 +1,50 @@
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Usuarios · Administración{% endblock %}
+{% block ancho %} admin{% endblock %}
+{% block contenido %}
+<p class="eyebrow">ADMINISTRACIÓN / USUARIOS</p>
+<h1>Cuentas <em>registradas.</em></h1>
+{% include 'cuentas/admin/_menu.html' %}
+{% if aviso %}<p class="cuenta-ok" role="status">{{ aviso }}</p>{% endif %}
+{% include 'cuentas/_error.html' %}
+<form method="get" class="admin-buscar" role="search">
+  <label>Buscar por correo<input type="search" name="q" value="{{ buscar }}" maxlength="254"></label>
+  <button class="button outline" type="submit">Buscar</button>
+</form>
+<div class="admin-scroll">
+<table class="admin-tabla">
+  <thead><tr><th scope="col">Correo</th><th scope="col">Estado</th><th scope="col">Alta</th><th scope="col">Último acceso</th><th scope="col">Estaciones</th><th scope="col">Telegram</th><th scope="col">Acciones</th></tr></thead>
+  <tbody>
+  {% for u in usuarios %}
+  <tr>
+    <td>{{ u.correo }}{% if u.id == yo.id %} <small>(tú)</small>{% endif %}</td>
+    <td>
+      {% if u.rol == 'admin' %}<span class="admin-etiqueta aviso">Admin</span>{% endif %}
+      {% if not u.activo %}<span class="admin-etiqueta mal">Inactiva</span>{% elif not u.verificado_utc %}<span class="admin-etiqueta aviso">Sin verificar</span>{% else %}<span class="admin-etiqueta bien">Activa</span>{% endif %}
+    </td>
+    <td>{{ hora_local(u.creado_utc) }}</td>
+    <td>{{ hora_local(u.ultimo_acceso_utc) }}</td>
+    <td>{{ u.favoritos }}{% if u.umbral is not none %} · {{ '%g'|format(u.umbral) }} µg/m³{% endif %}</td>
+    <td>{{ 'Sí' if u.telegram else '—' }}</td>
+    <td>
+      {% if u.id == yo.id %}<span class="cuenta-nota" title="No puedes aplicarte acciones a ti mismo">—</span>{% else %}
+      <form method="post" action="{{ url_for('cuentas.admin_accion', usuario_id=u.id) }}" class="admin-acciones">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="q" value="{{ buscar }}">
+        <select name="accion" aria-label="Acción para {{ u.correo }}">
+          {% if not u.verificado_utc %}<option value="verificar">Confirmar correo</option>{% endif %}
+          {% if u.activo %}<option value="desactivar">Desactivar</option>{% else %}<option value="activar">Activar</option>{% endif %}
+          {% if u.rol == 'admin' %}<option value="quitar_admin">Quitar admin</option>{% else %}<option value="hacer_admin">Hacer admin</option>{% endif %}
+          <option value="borrar">Borrar cuenta</option>
+        </select>
+        <button class="button outline" type="submit" onclick="return this.form.accion.value !== 'borrar' || confirm('¿Borrar esta cuenta y todos sus datos? No se puede deshacer.')">Aplicar</button>
+      </form>{% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7">No hay cuentas que coincidan.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="cuenta-nota">Las contraseñas nunca se muestran: se guardan cifradas.</p>
+{% endblock %}

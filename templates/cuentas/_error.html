@@ -1,1 +1,2 @@
 {% if error %}<p class="cuenta-error" role="alert">{{ error }}</p>{% endif %}
+{% if correo_local and correo_local.enlace %}<div class="cuenta-local" role="note"><strong>Prototipo local: no se envían correos reales.</strong><span>Este es el enlace del mensaje «{{ correo_local.asunto }}»:</span><a href="{{ correo_local.enlace }}">Abrir enlace</a></div>{% endif %}

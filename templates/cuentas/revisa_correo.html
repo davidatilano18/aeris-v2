@@ -5,6 +5,7 @@
 <h1>Revisa tu <em>correo.</em></h1>
 {% if recuperar %}<p class="cuenta-lead">Si <strong>{{ correo }}</strong> tiene una cuenta en AERIS, te enviamos un enlace para restablecer la contraseña. Vence en 1 hora.</p>
 {% else %}<p class="cuenta-lead">Te enviamos un mensaje a <strong>{{ correo }}</strong>. Abre el enlace para activar tu cuenta; vence en 24 horas.</p>{% endif %}
+{% include 'cuentas/_error.html' %}
 <p class="cuenta-nota">¿No llega? Revisa la carpeta de spam y espera unos minutos antes de volver a intentarlo.</p>
 <p class="cuenta-pie"><a href="{{ url_for('cuentas.entrar') }}">Ir a iniciar sesión</a></p>
 {% endblock %}

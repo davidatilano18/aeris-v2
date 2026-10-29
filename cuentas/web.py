@@ -4,6 +4,7 @@ Local: activas siempre, base data/aeris_usuarios.db, clave de sesión en .secret
 Beta (Railway): apagadas salvo que AERIS_CUENTAS_DB_PATH lo pida; ese despliegue aún no está habilitado.
 """
 import hmac
+import re
 import secrets
 import sqlite3
 from datetime import timedelta
@@ -35,10 +36,13 @@ def configurar(app, root, environ):
     app.config.update(SESSION_COOKIE_NAME='aeris_sesion', SESSION_COOKIE_HTTPONLY=True,
                       SESSION_COOKIE_SAMESITE='Lax', PERMANENT_SESSION_LIFETIME=timedelta(days=30))
     app.extensions['cuentas_db'] = db
+    app.config['AERIS_TELEGRAM_BOT'] = environ.get('AERIS_TELEGRAM_BOT', 'AERIS_QRO_BOT')
     app.extensions.setdefault('cuentas_enviar', correo.consola)
+    app.extensions['alertas_db'] = Path(environ.get('AERIS_ALERTAS_DB_PATH') or root / 'data' / 'aeris_alertas.db')
+    from . import admin  # noqa: F401  (añade /admin al blueprint antes de registrarlo)
     app.register_blueprint(blueprint)
     app.context_processor(lambda: {'cuentas_activas': True, 'usuario_actual': usuario_actual,
-                                   'mis_estaciones': mis_estaciones})
+                                   'mis_estaciones': mis_estaciones, 'correo_local': g.get('correo_local')})
     return db
 
 
@@ -129,8 +133,22 @@ def destino_seguro(valor):
     return url_for('cuentas.perfil') if partes.scheme or partes.netloc else valor
 
 
+def correo_local():
+    """Prototipo local sin envío real: el enlace se muestra en la página."""
+    return current_app.config['AERIS_ENV'] == 'local' and current_app.extensions['cuentas_enviar'] is correo.consola
+
+
+def puede_enviar(conn, direccion):
+    """Límite de correos por cuenta. Sin envío real no protege a nadie y solo dejaría al usuario sin enlace."""
+    return correo_local() or store.limitar(conn, direccion, 'correo')
+
+
 def enviar(para, mensaje):
     asunto, texto = mensaje
+    if correo_local():
+        # Prototipo local: no hay envío real, así que el enlace también se muestra en la página.
+        enlace = re.search(r'https?://\S+', texto)
+        g.correo_local = {'asunto': asunto, 'enlace': enlace.group(0) if enlace else None}
     try:
         current_app.extensions['cuentas_enviar'](para, asunto, texto)
     except Exception as exc:  # el texto puede incluir el enlace; solo se registra el tipo
@@ -162,7 +180,7 @@ def registro():
     except store.ErrorCuenta as exc:
         return pagina('cuentas/registro.html', 400, error=str(exc), correo=correo_texto)
     u = store.usuario(conn, uid)
-    if store.limitar(conn, u['correo'], 'correo'):
+    if puede_enviar(conn, u['correo']):
         if creado or not u['verificado_utc']:
             token = store.emitir_token(conn, uid, 'verificar')
             enviar(u['correo'], correo.verificacion(url_for('cuentas.verificar', token=token, _external=True)))
@@ -199,11 +217,14 @@ def entrar():
     if not u['activo']:
         return pagina('cuentas/entrar.html', 403, error='Esta cuenta está desactivada.', siguiente=siguiente)
     if not u['verificado_utc']:
-        if store.limitar(conn, u['correo'], 'correo'):
+        if puede_enviar(conn, u['correo']):
             token = store.emitir_token(conn, u['id'], 'verificar')
             enviar(u['correo'], correo.verificacion(url_for('cuentas.verificar', token=token, _external=True)))
-        return pagina('cuentas/entrar.html', 403, siguiente=siguiente, correo=correo_texto,
-                      error='Primero confirma tu correo. Te enviamos un enlace nuevo.')
+            aviso = 'Primero confirma tu correo. Te enviamos un enlace nuevo.'
+        else:  # no se afirma un envío que no ocurrió
+            aviso = ('Primero confirma tu correo. Ya te enviamos varios enlaces en la última hora: '
+                     'usa el más reciente o espera una hora para pedir otro.')
+        return pagina('cuentas/entrar.html', 403, siguiente=siguiente, correo=correo_texto, error=aviso)
     store.olvidar_intentos(conn, clave_correo, 'login_correo')
     iniciar_sesion(u)
     return redirect(destino_seguro(siguiente))
@@ -226,7 +247,7 @@ def recuperar():
         return pagina('cuentas/recuperar.html', 400, error=str(exc))
     if store.limitar(conn, ip(), 'registro_ip'):
         u = store.por_correo(conn, correo_texto)
-        if u and u['activo'] and store.limitar(conn, u['correo'], 'correo'):
+        if u and u['activo'] and puede_enviar(conn, u['correo']):
             token = store.emitir_token(conn, u['id'], 'recuperar')
             enviar(u['correo'], correo.recuperacion(url_for('cuentas.restablecer', token=token, _external=True)))
     # Siempre la misma respuesta: no se revela si el correo tiene cuenta.
@@ -249,10 +270,32 @@ def restablecer(token):
                   enlace=url_for('cuentas.entrar'), enlace_texto='Iniciar sesión')
 
 
+def ver_perfil(estado=200, **datos):
+    u = usuario_actual()
+    return pagina('cuentas/perfil.html', estado, u=u, telegram=store.vinculo_telegram(conexion(), u['id']), **datos)
+
+
 @blueprint.get('/cuenta')
 @requiere_sesion
 def perfil():
-    return pagina('cuentas/perfil.html', u=usuario_actual(), aviso=request.args.get('aviso'))
+    return ver_perfil(aviso=request.args.get('aviso'))
+
+
+@blueprint.post('/cuenta/telegram')
+@requiere_sesion
+def conectar_telegram():
+    u, conn = usuario_actual(), conexion()
+    if not store.limitar(conn, u['id'], 'telegram'):
+        return ver_perfil(429, error=DEMASIADOS)
+    codigo = store.codigo_telegram(conn, u['id'])
+    return ver_perfil(enlace_telegram=f"https://t.me/{current_app.config['AERIS_TELEGRAM_BOT']}?start={codigo}")
+
+
+@blueprint.post('/cuenta/telegram/desconectar')
+@requiere_sesion
+def desconectar_telegram():
+    store.desvincular_telegram(conexion(), usuario_id=usuario_actual()['id'])
+    return redirect(url_for('cuentas.perfil', aviso='telegram'))
 
 
 @blueprint.post('/cuenta/contrasena')
@@ -260,15 +303,15 @@ def perfil():
 def contrasena():
     u, conn = usuario_actual(), conexion()
     if not store.limitar(conn, u['correo'], 'login_correo'):
-        return pagina('cuentas/perfil.html', 429, u=u, error=DEMASIADOS)
+        return ver_perfil(429, error=DEMASIADOS)
     if not store.autenticar(conn, u['correo'], request.form.get('actual')):
-        return pagina('cuentas/perfil.html', 400, u=u, error='Tu contraseña actual no es correcta.')
+        return ver_perfil(400, error='Tu contraseña actual no es correcta.')
     if request.form.get('nueva') != request.form.get('confirmar'):
-        return pagina('cuentas/perfil.html', 400, u=u, error='Las contraseñas nuevas no coinciden.')
+        return ver_perfil(400, error='Las contraseñas nuevas no coinciden.')
     try:
         version = store.cambiar_contrasena(conn, u['id'], request.form.get('nueva'))
     except store.ErrorCuenta as exc:
-        return pagina('cuentas/perfil.html', 400, u=u, error=str(exc))
+        return ver_perfil(400, error=str(exc))
     session['v'] = version  # esta sesión sigue; las demás se cierran
     return redirect(url_for('cuentas.perfil', aviso='contrasena'))
 
@@ -278,9 +321,9 @@ def contrasena():
 def borrar():
     u, conn = usuario_actual(), conexion()
     if not store.limitar(conn, u['correo'], 'login_correo'):
-        return pagina('cuentas/perfil.html', 429, u=u, error=DEMASIADOS)
+        return ver_perfil(429, error=DEMASIADOS)
     if not store.autenticar(conn, u['correo'], request.form.get('contrasena')):
-        return pagina('cuentas/perfil.html', 400, u=u, error='Para borrar tu cuenta escribe tu contraseña correcta.')
+        return ver_perfil(400, error='Para borrar tu cuenta escribe tu contraseña correcta.')
     store.borrar(conn, u['id'])
     session.clear()
     return pagina('cuentas/mensaje.html', titulo='Cuenta borrada',

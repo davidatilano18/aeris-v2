@@ -1,10 +1,29 @@
-# AERIS
+# AERIS v2
 
 Observatorio de calidad del aire (PM2.5) para Querétaro. Recopila mediciones
 horarias públicas de OpenAQ, evalúa su calidad sin alterar los valores
 originales y las presenta en un dashboard web de solo lectura.
 
-**Autor:** David Israel Atilano Quiroz
+Esta versión agrega, como **prototipo local**, cuentas de usuario, estaciones
+favoritas, alertas por Telegram y un panel de administración. El sitio
+publicado sigue en el repositorio [AERIS](https://github.com/davidatilano18/AERIS).
+
+**Autor y responsable:** David Israel Atilano Quiroz
+
+**Colaboradores:** Ricardo Leonel Ordaz Aguilar y Javier Yael Marvaez Olguin
+
+## Novedades de la v2 (prototipo local)
+
+| Fase | Qué agrega | Documentación |
+|---|---|---|
+| A y B | Registro, confirmación de correo, inicio de sesión, recuperación de contraseña y aviso de privacidad | [Cuentas](docs/cuentas.md) |
+| C | «Mis estaciones» y umbral personal, mostrados en la portada | [Cuentas](docs/cuentas.md#fase-c-estaciones-favoritas) |
+| D | Alertas por Telegram vinculadas a la cuenta (@AERIS_QRO_BOT) | [Alertas](docs/alertas.md) |
+| F | Panel de administración (`/admin`) | [Cuentas](docs/cuentas.md#fase-f-panel-de-administración) |
+| E, G y H | Pendientes: descargas con cuenta, revisión de seguridad y despliegue | — |
+
+Las cuentas solo se activan en modo local; en el modo `beta` (Railway) siguen
+apagadas.
 
 ## Estado actual
 

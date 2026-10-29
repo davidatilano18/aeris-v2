@@ -11,14 +11,15 @@ from werkzeug.security import check_password_hash, generate_password_hash
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = ROOT / 'data' / 'aeris_usuarios.db'
 MEDICIONES_DB = ROOT / 'data' / 'aeris_air_quality.db'
-VERSION = 2
+VERSION = 4
 MAX_FAVORITOS = 20
 ROLES = ('usuario', 'admin')
 MIN_CONTRASENA, MAX_CONTRASENA = 10, 128  # el máximo acota el costo de scrypt
-VIGENCIA = {'verificar': timedelta(hours=24), 'recuperar': timedelta(hours=1)}
+VIGENCIA = {'verificar': timedelta(hours=24), 'recuperar': timedelta(hours=1), 'telegram': timedelta(minutes=15)}
 # Ventanas de intentos: (máximo, duración)
 LIMITES = {'login_correo': (5, timedelta(minutes=15)), 'login_ip': (20, timedelta(minutes=15)),
-           'registro_ip': (5, timedelta(hours=1)), 'correo': (3, timedelta(hours=1))}
+           'registro_ip': (5, timedelta(hours=1)), 'correo': (3, timedelta(hours=1)),
+           'telegram': (5, timedelta(hours=1))}
 CORREO = re.compile(r'[^@\s]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+')
 # Se compara contra este hash cuando el correo no existe, para que el tiempo no lo delate.
 _HASH_FALSO = generate_password_hash(secrets.token_urlsafe(16))
@@ -52,6 +53,20 @@ CREATE TABLE favoritos (
     sensor_id INTEGER NOT NULL,
     creado_utc TEXT NOT NULL,
     PRIMARY KEY(usuario_id, sensor_id));
+CREATE TABLE telegram_vinculos (
+    usuario_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    chat_id INTEGER NOT NULL UNIQUE,
+    vinculado_utc TEXT NOT NULL);
+CREATE TABLE telegram_codigos (
+    hash TEXT PRIMARY KEY,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    vence_utc TEXT NOT NULL);
+CREATE TABLE admin_eventos (
+    id INTEGER PRIMARY KEY,
+    admin_correo TEXT NOT NULL,
+    accion TEXT NOT NULL,
+    usuario_correo TEXT NOT NULL,
+    momento_utc TEXT NOT NULL);
 '''
 # Migraciones desde cada versión anterior; se aplican en orden dentro de una transacción.
 MIGRACIONES = {
@@ -61,6 +76,22 @@ CREATE TABLE favoritos (
     sensor_id INTEGER NOT NULL,
     creado_utc TEXT NOT NULL,
     PRIMARY KEY(usuario_id, sensor_id));
+''',
+    2: '''CREATE TABLE telegram_vinculos (
+    usuario_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    chat_id INTEGER NOT NULL UNIQUE,
+    vinculado_utc TEXT NOT NULL);
+CREATE TABLE telegram_codigos (
+    hash TEXT PRIMARY KEY,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    vence_utc TEXT NOT NULL);
+''',
+    3: '''CREATE TABLE admin_eventos (
+    id INTEGER PRIMARY KEY,
+    admin_correo TEXT NOT NULL,
+    accion TEXT NOT NULL,
+    usuario_correo TEXT NOT NULL,
+    momento_utc TEXT NOT NULL);
 ''',
 }
 
@@ -267,3 +298,118 @@ def guardar_preferencias(conn, usuario_id, sensores, umbral, validos, now=None):
         conn.executemany('INSERT INTO favoritos(usuario_id,sensor_id,creado_utc) VALUES (?,?,?)',
                          [(int(usuario_id), s, momento) for s in sensores])
         conn.execute('UPDATE usuarios SET umbral=? WHERE id=?', (None if umbral is None else float(umbral), int(usuario_id)))
+
+
+def codigo_telegram(conn, usuario_id, now=None):
+    """Código de un solo uso para vincular un chat; reemplaza al anterior. Solo se guarda su hash."""
+    now = now or utc_now()
+    codigo = secrets.token_urlsafe(18)  # cabe en el parámetro start de Telegram (máx. 64, [A-Za-z0-9_-])
+    with conn:
+        conn.execute('DELETE FROM telegram_codigos WHERE usuario_id=? OR vence_utc<=?', (int(usuario_id), stamp(now)))
+        conn.execute('INSERT INTO telegram_codigos(hash,usuario_id,vence_utc) VALUES (?,?,?)',
+                     (digest(codigo), int(usuario_id), stamp(now + VIGENCIA['telegram'])))
+    return codigo
+
+
+def vincular_telegram(conn, codigo, chat_id, now=None):
+    """Consume el código y vincula el chat. Devuelve el usuario o None. Un chat, una cuenta."""
+    now = now or utc_now()
+    if not isinstance(codigo, str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,64}', codigo):
+        return None
+    with conn:
+        row = conn.execute('SELECT usuario_id,vence_utc FROM telegram_codigos WHERE hash=?', (digest(codigo),)).fetchone()
+        if not row:
+            return None
+        conn.execute('DELETE FROM telegram_codigos WHERE hash=?', (digest(codigo),))
+        if row['vence_utc'] <= stamp(now):
+            return None
+        u = conn.execute('SELECT * FROM usuarios WHERE id=? AND activo=1 AND verificado_utc IS NOT NULL',
+                         (row['usuario_id'],)).fetchone()
+        if not u:
+            return None
+        conn.execute('DELETE FROM telegram_vinculos WHERE usuario_id=? OR chat_id=?', (u['id'], int(chat_id)))
+        conn.execute('INSERT INTO telegram_vinculos(usuario_id,chat_id,vinculado_utc) VALUES (?,?,?)',
+                     (u['id'], int(chat_id), stamp(now)))
+    return dict(u)
+
+
+def vinculo_telegram(conn, usuario_id):
+    row = conn.execute('SELECT chat_id,vinculado_utc FROM telegram_vinculos WHERE usuario_id=?', (int(usuario_id),)).fetchone()
+    return dict(row) if row else None
+
+
+def desvincular_telegram(conn, usuario_id=None, chat_id=None):
+    with conn:
+        if usuario_id is not None:
+            return conn.execute('DELETE FROM telegram_vinculos WHERE usuario_id=?', (int(usuario_id),)).rowcount == 1
+        return conn.execute('DELETE FROM telegram_vinculos WHERE chat_id=?', (int(chat_id),)).rowcount == 1
+
+
+def vinculos_activos(conn):
+    """{chat_id: {sensor_id: umbral}} de las cuentas activas y verificadas con Telegram vinculado.
+
+    El umbral es el personal o None (el bot aplica la referencia).
+    """
+    resultado = {}
+    for r in conn.execute("""SELECT v.chat_id,u.id,u.umbral FROM telegram_vinculos v JOIN usuarios u ON u.id=v.usuario_id
+                             WHERE u.activo=1 AND u.verificado_utc IS NOT NULL"""):
+        resultado[r['chat_id']] = {s: r['umbral'] for s in favoritos(conn, r['id'])}
+    return resultado
+
+
+# --- Administración (fase F) ---
+ACCIONES = {'desactivar': 'Desactivó la cuenta', 'activar': 'Activó la cuenta', 'hacer_admin': 'Dio rol de administración',
+            'quitar_admin': 'Quitó rol de administración', 'verificar': 'Confirmó el correo', 'borrar': 'Borró la cuenta'}
+
+
+def resumen_usuarios(conn, now=None):
+    hace7 = stamp((now or utc_now()) - timedelta(days=7))
+    r = conn.execute("""SELECT COUNT(*) total, SUM(verificado_utc IS NOT NULL) verificados, SUM(activo=0) inactivos,
+        SUM(rol='admin') admins, SUM(creado_utc>=?) nuevos7, SUM(ultimo_acceso_utc>=?) activos7 FROM usuarios""",
+        (hace7, hace7)).fetchone()
+    datos = {k: r[k] or 0 for k in r.keys()}
+    datos['telegram'] = conn.execute('SELECT COUNT(*) FROM telegram_vinculos').fetchone()[0]
+    return datos
+
+
+def listar_usuarios(conn, buscar='', limite=200):
+    texto = buscar.strip().lower()[:254].replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+    patron = '%' + texto + '%'
+    return [dict(r) for r in conn.execute("""SELECT u.id,u.correo,u.rol,u.verificado_utc,u.activo,u.creado_utc,
+        u.ultimo_acceso_utc,u.umbral,(SELECT COUNT(*) FROM favoritos f WHERE f.usuario_id=u.id) favoritos,
+        EXISTS(SELECT 1 FROM telegram_vinculos v WHERE v.usuario_id=u.id) telegram
+        FROM usuarios u WHERE u.correo LIKE ? ESCAPE '\\' ORDER BY u.creado_utc DESC LIMIT ?""", (patron, int(limite)))]
+
+
+def administrar(conn, admin, usuario_id, accion, now=None):
+    """Aplica una acción de administración y la registra. Protege al propio admin y al último admin."""
+    if accion not in ACCIONES:
+        raise ErrorCuenta('Acción no válida.')
+    u = usuario(conn, usuario_id)
+    if u is None:
+        raise ErrorCuenta('La cuenta ya no existe.')
+    if u['id'] == admin['id'] and accion in ('desactivar', 'quitar_admin', 'borrar'):
+        raise ErrorCuenta('No puedes aplicarte esa acción a ti mismo.')
+    if u['rol'] == 'admin' and accion in ('desactivar', 'quitar_admin', 'borrar'):
+        otros = conn.execute("SELECT COUNT(*) FROM usuarios WHERE rol='admin' AND activo=1 AND id<>?", (u['id'],)).fetchone()[0]
+        if otros == 0:
+            raise ErrorCuenta('Debe quedar al menos una cuenta de administración activa.')
+    momento = stamp(now or utc_now())
+    with conn:
+        if accion == 'desactivar':  # también cierra sus sesiones abiertas
+            conn.execute('UPDATE usuarios SET activo=0,sesion_version=sesion_version+1 WHERE id=?', (u['id'],))
+        elif accion == 'activar':
+            conn.execute('UPDATE usuarios SET activo=1 WHERE id=?', (u['id'],))
+        elif accion in ('hacer_admin', 'quitar_admin'):
+            conn.execute('UPDATE usuarios SET rol=? WHERE id=?', ('admin' if accion == 'hacer_admin' else 'usuario', u['id']))
+        elif accion == 'verificar':
+            conn.execute('UPDATE usuarios SET verificado_utc=COALESCE(verificado_utc,?) WHERE id=?', (momento, u['id']))
+        elif accion == 'borrar':
+            conn.execute('DELETE FROM usuarios WHERE id=?', (u['id'],))
+        conn.execute('INSERT INTO admin_eventos(admin_correo,accion,usuario_correo,momento_utc) VALUES (?,?,?,?)',
+                     (admin['correo'], accion, u['correo'], momento))
+    return u
+
+
+def eventos_admin(conn, limite=20):
+    return [dict(r) for r in conn.execute('SELECT * FROM admin_eventos ORDER BY id DESC LIMIT ?', (int(limite),))]

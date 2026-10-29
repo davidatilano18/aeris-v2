@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from alertas import evaluar, lecturas, store
+from alertas import evaluar, lecturas, store, vinculos
 
 ROOT = Path(__file__).resolve().parent.parent
 LOCAL = ZoneInfo('America/Mexico_City')
@@ -30,6 +30,7 @@ COMANDOS = [
     ('cancelar', 'Dejar de recibir avisos de una estación'),
     ('mis_alertas', 'Ver tus suscripciones'),
     ('silencio', 'Horas sin avisos: /silencio 23 7 o /silencio no'),
+    ('desvincular', 'Desconectar este chat de tu cuenta web'),
     ('pausa', 'Pausar todos los avisos'),
     ('reanudar', 'Reanudar los avisos'),
     ('baja', 'Borrar todos tus datos'),
@@ -42,6 +43,8 @@ BIENVENIDA = ('Hola, soy el bot de AERIS, el observatorio de PM2.5 de Querétaro
               'Te aviso cuando la lectura horaria de una estación supere el umbral que elijas.\n'
               'Solo guardo el número de este chat; con /baja se borra todo.\n\n')
 SIN_DATOS = 'No pude leer las mediciones en este momento. Intenta más tarde.'
+DESDE_CUENTA = ('Este chat está vinculado a tu cuenta de AERIS: tus estaciones y tu umbral se eligen en la web, '
+                'en «Mi cuenta» → «Elegir estaciones». Aquí puedes usar /pausa, /silencio y /ahora.')
 
 
 class TelegramError(Exception):
@@ -91,8 +94,8 @@ def linea(e):
 
 
 class Bot:
-    def __init__(self, conn, mediciones, now=lambda: datetime.now(timezone.utc)):
-        self.conn, self.mediciones, self.now = conn, mediciones, now
+    def __init__(self, conn, mediciones, now=lambda: datetime.now(timezone.utc), cuentas=None):
+        self.conn, self.mediciones, self.now, self.cuentas = conn, mediciones, now, cuentas
 
     def estaciones(self): return lecturas.estaciones(self.mediciones, self.now())
 
@@ -114,11 +117,16 @@ class Bot:
             return 'Usa /ayuda para ver los comandos.'
         comando, args = partes[0][1:].split('@', 1)[0].lower(), partes[1:]
         if comando == 'start':
-            store.alta(self.conn, chat_id, store.utc_now())
-            return BIENVENIDA + AYUDA
+            nuevo = store.alta(self.conn, chat_id, store.utc_now())
+            if args:
+                return self.vincular(chat_id, args[0])
+            return BIENVENIDA + AYUDA if nuevo or not store.es_vinculado(self.conn, chat_id) else AYUDA
         if comando == 'ayuda':
             return AYUDA
         if comando == 'baja':
+            if self.cuentas is not None:
+                from cuentas import store as cuentas
+                cuentas.desvincular_telegram(self.cuentas, chat_id=chat_id)
             return ('Listo: borré este chat, tus suscripciones y tu historial. Con /start vuelves cuando quieras.'
                     if store.baja(self.conn, chat_id) else 'No tenía datos de este chat.')
         if comando in ('ahora', 'estaciones'):
@@ -130,6 +138,15 @@ class Bot:
             return 'PM2.5, última lectura horaria:\n' + '\n'.join(linea(e) for e in lista)
         if store.suscriptor(self.conn, chat_id) is None:
             return 'Primero envía /start.'
+        if comando in ('suscribir', 'cancelar') and store.es_vinculado(self.conn, chat_id):
+            return DESDE_CUENTA
+        if comando == 'desvincular':
+            if not store.es_vinculado(self.conn, chat_id):
+                return 'Este chat no está vinculado a ninguna cuenta.'
+            from cuentas import store as cuentas
+            cuentas.desvincular_telegram(self.cuentas, chat_id=chat_id)
+            store.liberar(self.conn, chat_id)
+            return 'Listo: desconecté este chat de tu cuenta y quité esas suscripciones.'
         if comando == 'suscribir':
             if not 1 <= len(args) <= 2:
                 return f'Uso: /suscribir <número|todas> [umbral]. Ejemplo: /suscribir 2 {UMBRAL_NORMA:g}'
@@ -148,7 +165,10 @@ class Bot:
                     else f'No tenías suscripción de {nombre}.')
         if comando == 'mis_alertas':
             subs, quien = store.suscripciones(self.conn, chat_id), store.suscriptor(self.conn, chat_id)
-            if not subs: return 'No tienes suscripciones. Ejemplo: /suscribir todas'
+            vinculado = store.es_vinculado(self.conn, chat_id)
+            if not subs:
+                return ('Tu cuenta no tiene estaciones elegidas. Elígelas en la web, en «Mi cuenta».' if vinculado
+                        else 'No tienes suscripciones. Ejemplo: /suscribir todas')
             nombres = self.nombres()
             lineas = [f'- {"Todas las estaciones" if s["sensor_id"] is None else nombres.get(s["sensor_id"], "Estación sin datos recientes")}: '
                       f'{s["umbral"]:g} µg/m³' for s in subs]
@@ -156,6 +176,8 @@ class Bot:
                 lineas.append(f'Silencio de {quien["silencio_desde"]}:00 a {quien["silencio_hasta"]}:00')
             if not quien['activo']:
                 lineas.append('Avisos en pausa. Usa /reanudar.')
+            if vinculado:
+                lineas.append('Se administran desde tu cuenta web.')
             return 'Tus alertas:\n' + '\n'.join(lineas)
         if comando == 'silencio':
             if args == ['no']:
@@ -172,6 +194,20 @@ class Bot:
             store.pausar(self.conn, chat_id, False)
             return 'Avisos reanudados.'
         return 'No conozco ese comando. Usa /ayuda.'
+
+    def vincular(self, chat_id, codigo):
+        if self.cuentas is None:
+            return 'La vinculación con cuentas no está disponible en este momento.'
+        from cuentas import store as cuentas
+        u = cuentas.vincular_telegram(self.cuentas, codigo, chat_id)
+        if u is None:
+            return 'El enlace no es válido o ya venció. Genera uno nuevo en «Mi cuenta» de AERIS.'
+        vinculos.sincronizar(self.conn, self.cuentas)
+        n = len(store.suscripciones(self.conn, chat_id))
+        umbral = u['umbral'] if u['umbral'] is not None else vinculos.UMBRAL_REFERENCIA
+        detalle = (f'Te avisaré de tus {n} estaciones con umbral de {umbral:g} µg/m³.' if n else
+                   'Aún no eliges estaciones: hazlo en «Mi cuenta» → «Elegir estaciones».')
+        return f'Listo: este chat quedó vinculado a la cuenta {vinculos.ocultar(u["correo"])}. {detalle}'
 
 
 class Limitador:
@@ -236,18 +272,33 @@ def main(argv=None):
     parser.add_argument('--key-file', default=ROOT / '.secrets' / 'telegram_bot_token.clixml', type=Path)
     parser.add_argument('--db', default=store.DEFAULT_DB, type=Path)
     parser.add_argument('--mediciones', default=store.MEDICIONES_DB, type=Path)
+    parser.add_argument('--cuentas', type=Path, help='Base de cuentas web para vincular chats (opcional)')
     args = parser.parse_args(argv)
     from data_ingestion.windows_credentials import load_key
     api = Telegram(load_key(args.key_file))
     conn = store.conectar(args.db)
+    cuentas_conn = None
+    if args.cuentas:
+        from cuentas import store as cuentas
+        cuentas_conn = cuentas.conectar(args.cuentas)
     vigilante = evaluar.Vigilante(lambda: evaluar.evaluar(conn, api, args.mediciones, log=log),
                                   lambda: evaluar.marca_sincronizacion(args.mediciones))
+
+    def tarea():
+        if cuentas_conn is not None:  # los cambios hechos en la web llegan en la siguiente vuelta
+            for chat_id, texto in vinculos.sincronizar(conn, cuentas_conn):
+                try: api.send(chat_id, texto)
+                except (TelegramError, OSError) as exc: log(f'envio_fallido type={type(exc).__name__}')
+        vigilante()
+
     try:
-        run(api, Bot(conn, args.mediciones), tarea=vigilante)
+        run(api, Bot(conn, args.mediciones, cuentas=cuentas_conn), tarea=tarea)
     except KeyboardInterrupt:
         log('bot_detenido')
     finally:
         conn.close()
+        if cuentas_conn is not None:
+            cuentas_conn.close()
 
 
 if __name__ == '__main__':

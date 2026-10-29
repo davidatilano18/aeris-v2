@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = ROOT / 'data' / 'aeris_alertas.db'
 MEDICIONES_DB = ROOT / 'data' / 'aeris_air_quality.db'
-VERSION = 1
+VERSION = 2
 MAX_SUSCRIPCIONES = 10
 TODAS = None  # sensor_id NULL = todas las estaciones
 
@@ -34,7 +34,13 @@ CREATE TABLE alertas_enviadas (
     tipo TEXT NOT NULL CHECK(tipo IN ('supera','normaliza')),
     enviada_utc TEXT NOT NULL);
 CREATE INDEX alertas_por_suscripcion ON alertas_enviadas(suscripcion_id, sensor_id, id);
+CREATE TABLE chats_vinculados (
+    chat_id INTEGER PRIMARY KEY REFERENCES suscriptores(chat_id) ON DELETE CASCADE);
 '''
+# Chats cuyas suscripciones se administran desde una cuenta web (fase D).
+MIGRACIONES = {1: '''CREATE TABLE chats_vinculados (
+    chat_id INTEGER PRIMARY KEY REFERENCES suscriptores(chat_id) ON DELETE CASCADE);
+'''}
 
 
 def utc_now(): return datetime.now(timezone.utc).isoformat(timespec='seconds').replace('+00:00', 'Z')
@@ -54,6 +60,9 @@ def conectar(path=DEFAULT_DB):
                 raise sqlite3.DatabaseError('La base no es de alertas AERIS')
             with conn:
                 conn.executescript(SCHEMA + f'PRAGMA user_version={VERSION};')
+        elif version in MIGRACIONES:
+            for v in range(version, VERSION):
+                conn.executescript('BEGIN;' + MIGRACIONES[v] + f'PRAGMA user_version={v + 1};COMMIT;')
         elif version != VERSION:
             raise sqlite3.DatabaseError(f'Versión de esquema no soportada: {version}')
         return conn
@@ -148,3 +157,39 @@ def registrar_aviso(conn, suscripcion_id, sensor_id, fecha_utc, valor, tipo, now
     with conn:
         conn.execute('''INSERT INTO alertas_enviadas(suscripcion_id,sensor_id,fecha_utc,valor,tipo,enviada_utc)
             VALUES (?,?,?,?,?,?)''', (suscripcion_id, int(sensor_id), fecha_utc, float(valor), tipo, now or utc_now()))
+
+
+def vinculados(conn):
+    return {r[0] for r in conn.execute('SELECT chat_id FROM chats_vinculados')}
+
+
+def es_vinculado(conn, chat_id):
+    return conn.execute('SELECT 1 FROM chats_vinculados WHERE chat_id=?', (int(chat_id),)).fetchone() is not None
+
+
+def administrar_desde_cuenta(conn, chat_id, deseadas, now=None):
+    """Deja al chat exactamente con las suscripciones {sensor_id: umbral} de su cuenta.
+
+    Conserva el historial de avisos de las estaciones que siguen, para no repetir avisos.
+    """
+    with conn:  # sin reactivar: respeta /pausa
+        conn.execute('INSERT OR IGNORE INTO suscriptores(chat_id,alta_utc) VALUES (?,?)', (int(chat_id), now or utc_now()))
+        conn.execute('INSERT OR IGNORE INTO chats_vinculados(chat_id) VALUES (?)', (int(chat_id),))
+        actuales = {r['sensor_id']: r['id'] for r in conn.execute(
+            'SELECT id,sensor_id FROM suscripciones WHERE chat_id=?', (int(chat_id),))}
+        for sensor_id, sub_id in actuales.items():
+            if sensor_id not in deseadas:
+                conn.execute('DELETE FROM suscripciones WHERE id=?', (sub_id,))
+        for sensor_id, umbral in deseadas.items():
+            if sensor_id in actuales:
+                conn.execute('UPDATE suscripciones SET umbral=? WHERE id=?', (float(umbral), actuales[sensor_id]))
+            else:
+                conn.execute('INSERT INTO suscripciones(chat_id,sensor_id,umbral,creada_utc) VALUES (?,?,?,?)',
+                             (int(chat_id), int(sensor_id), float(umbral), now or utc_now()))
+
+
+def liberar(conn, chat_id):
+    """El chat deja de administrarse desde una cuenta: se quitan sus suscripciones."""
+    with conn:
+        conn.execute('DELETE FROM suscripciones WHERE chat_id=?', (int(chat_id),))
+        return conn.execute('DELETE FROM chats_vinculados WHERE chat_id=?', (int(chat_id),)).rowcount == 1

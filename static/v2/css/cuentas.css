@@ -45,3 +45,31 @@
 .cuenta-mias ul{list-style:none;padding:0;margin:0 0 8px}
 .cuenta-mias li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
 .cuenta-mias .supera{color:#ffb38a}
+.cuenta-local{display:grid;gap:6px;margin-block:16px;padding:14px;border:1px dashed #a8924a;border-radius:6px;background:#2e2914;font-size:13px;color:#ffefbf}.cuenta-local a{color:var(--teal);font-weight:600;width:max-content}
+.cuenta-tarjeta.admin{max-width:1180px}
+.admin-menu{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 10px}
+.admin-menu a{font-size:12px;text-decoration:none;padding:8px 14px;border:1px solid var(--line);border-radius:999px;color:var(--soft)}
+.admin-menu a[aria-current=page]{border-color:var(--teal);color:var(--teal)}
+.admin-cifras{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0 0 8px}
+.admin-cifras div{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:#0a1c2a}
+.admin-cifras dt{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.admin-cifras dd{margin:6px 0 0;font-size:22px;font-variant-numeric:tabular-nums}
+.admin-cifras .admin-bien{border-left:3px solid var(--teal)}.admin-cifras .admin-mal{border-left:3px solid #ef8f3d}
+.admin-cifras .admin-bien dd,.admin-cifras .admin-mal dd{font-size:16px}
+.admin-lista{font-size:13px;color:var(--soft);padding-left:18px}
+.admin-scroll{overflow-x:auto;margin-top:12px}
+.admin-tabla{width:100%;min-width:0;border-collapse:collapse;font-size:13px}
+.admin-scroll .admin-tabla{min-width:880px}
+.admin-tabla th{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:600}
+.admin-tabla td,.admin-tabla th{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.admin-tabla td small{color:var(--muted)}
+.admin-etiqueta{display:inline-block;font-size:10px;padding:3px 8px;border-radius:999px;margin:1px 2px 1px 0;border:1px solid}
+.admin-etiqueta.bien{color:#9ff5dd;border-color:#3d8f7a}.admin-etiqueta.aviso{color:#ffe59a;border-color:#a8924a}.admin-etiqueta.mal{color:#ffb4a6;border-color:#a9877a}
+.admin-acciones{display:flex;gap:6px;align-items:center}
+.admin-acciones select{min-height:34px;font-size:12px;padding:6px 8px}
+.admin-acciones .button{min-height:34px;padding:6px 12px;font-size:11px}
+.admin-buscar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:10px}
+.admin-buscar label{display:grid;gap:6px;font-size:12px;color:var(--soft)}
+.admin-buscar input{font:inherit;font-size:14px;color:var(--ink);background:#081724;border:1px solid #3b5a68;border-radius:6px;padding:9px 12px;min-width:260px}
+.admin-buscar .button{border:1px solid #42606e;cursor:pointer}
+@media (max-width:640px){.admin-buscar input{min-width:0;width:100%}.admin-buscar label{width:100%}}

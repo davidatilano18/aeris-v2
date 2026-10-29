@@ -1,0 +1,5 @@
+<nav class="admin-menu" aria-label="Administración">
+  <a href="{{ url_for('cuentas.admin_inicio') }}"{% if request.endpoint == 'cuentas.admin_inicio' %} aria-current="page"{% endif %}>Resumen</a>
+  <a href="{{ url_for('cuentas.admin_usuarios') }}"{% if request.endpoint in ('cuentas.admin_usuarios', 'cuentas.admin_accion') %} aria-current="page"{% endif %}>Usuarios</a>
+  <a href="{{ url_for('cuentas.perfil') }}">Mi cuenta</a>
+</nav>

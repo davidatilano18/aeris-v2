@@ -1,0 +1,56 @@
+{% extends 'cuentas/base.html' %}
+{% block titulo %}Administración{% endblock %}
+{% block ancho %} admin{% endblock %}
+{% block contenido %}
+<p class="eyebrow">ADMINISTRACIÓN</p>
+<h1>Panel de <em>AERIS.</em></h1>
+{% include 'cuentas/admin/_menu.html' %}
+
+<h2>Usuarios</h2>
+<dl class="admin-cifras">
+  <div><dt>Cuentas</dt><dd>{{ usuarios.total }}</dd></div>
+  <div><dt>Verificadas</dt><dd>{{ usuarios.verificados }}</dd></div>
+  <div><dt>Nuevas (7 días)</dt><dd>{{ usuarios.nuevos7 }}</dd></div>
+  <div><dt>Entraron (7 días)</dt><dd>{{ usuarios.activos7 }}</dd></div>
+  <div><dt>Con Telegram</dt><dd>{{ usuarios.telegram }}</dd></div>
+  <div><dt>Inactivas</dt><dd>{{ usuarios.inactivos }}</dd></div>
+  <div><dt>Administración</dt><dd>{{ usuarios.admins }}</dd></div>
+</dl>
+
+<h2>Ingesta de datos</h2>
+{% if ingesta %}
+<dl class="admin-cifras">
+  <div class="{{ 'admin-mal' if ingesta.edad_horas is none or ingesta.edad_horas > 2 else 'admin-bien' }}"><dt>Última sincronización exitosa</dt><dd>{{ hora_local(ingesta.ultima_exitosa) }}</dd></div>
+  <div><dt>Corridas (24 h)</dt><dd>{{ ingesta.corridas_24h }}</dd></div>
+  <div class="{{ 'admin-mal' if ingesta.fallas_24h else 'admin-bien' }}"><dt>Fallas (24 h)</dt><dd>{{ ingesta.fallas_24h|length }}</dd></div>
+</dl>
+{% if ingesta.fallas_24h %}<ul class="admin-lista">{% for f in ingesta.fallas_24h %}<li>{{ hora_local(f.fin) }} · {{ f.estado }}{% if f.error %} · {{ f.error }}{% endif %}</li>{% endfor %}</ul>{% endif %}
+{% else %}<p class="cuenta-nota">No se encontraron reportes de la sincronización programada.</p>{% endif %}
+
+<h2>Estaciones</h2>
+{% if estaciones %}
+<table class="admin-tabla">
+  <thead><tr><th scope="col">Estación</th><th scope="col">Última lectura</th><th scope="col">PM2.5</th><th scope="col">Estado</th></tr></thead>
+  <tbody>{% for e in estaciones %}<tr>
+    <td>{{ e.nombre }}</td><td>{{ hora_local(e.fecha_utc) }}</td><td>{{ '%.0f'|format(e.valor) }} µg/m³</td>
+    <td>{% if e.edad_horas > edad_maxima %}<span class="admin-etiqueta mal">Atrasada {{ '%.0f'|format(e.edad_horas) }} h</span>{% elif e.valor <= 0 %}<span class="admin-etiqueta aviso">Valor 0</span>{% elif e.revision %}<span class="admin-etiqueta aviso">En revisión</span>{% else %}<span class="admin-etiqueta bien">Al día</span>{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table>
+{% else %}<p class="cuenta-nota">No se pudieron leer las estaciones.</p>{% endif %}
+
+<h2>Bot de alertas</h2>
+{% if alertas %}
+<dl class="admin-cifras">
+  <div><dt>Chats</dt><dd>{{ alertas.chats }}</dd></div>
+  <div><dt>Vinculados a cuenta</dt><dd>{{ alertas.vinculados }}</dd></div>
+  <div><dt>En pausa</dt><dd>{{ alertas.pausados }}</dd></div>
+  <div><dt>Suscripciones</dt><dd>{{ alertas.suscripciones }}</dd></div>
+  <div><dt>Avisos (24 h)</dt><dd>{{ alertas.avisos_24h }}</dd></div>
+  <div><dt>Último aviso</dt><dd>{{ hora_local(alertas.ultimo_aviso) }}</dd></div>
+</dl>
+{% else %}<p class="cuenta-nota">El bot todavía no ha creado su base de alertas.</p>{% endif %}
+
+<h2>Bitácora</h2>
+{% if eventos %}<ul class="admin-lista">{% for ev in eventos %}<li>{{ hora_local(ev.momento_utc) }} · <strong>{{ ev.admin_correo }}</strong> — {{ acciones.get(ev.accion, ev.accion) }} · {{ ev.usuario_correo }}</li>{% endfor %}</ul>
+{% else %}<p class="cuenta-nota">Sin acciones registradas.</p>{% endif %}
+{% endblock %}

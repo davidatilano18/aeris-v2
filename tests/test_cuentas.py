@@ -335,8 +335,70 @@ class FavoritosTests(unittest.TestCase):
         conn.executescript(v1 + "PRAGMA user_version=1; INSERT INTO usuarios(correo,contrasena_hash,creado_utc) VALUES ('a@b.mx','x','2026-10-27T00:00:00Z');")
         conn.close()
         conn = store.conectar(path)
-        self.assertEqual(2, conn.execute('PRAGMA user_version').fetchone()[0])
+        self.assertEqual(store.VERSION, conn.execute('PRAGMA user_version').fetchone()[0])
         self.assertIsNone(store.por_correo(conn, 'a@b.mx')['umbral'])
         store.guardar_preferencias(conn, 1, [5], 40, {5})
         self.assertEqual([5], store.favoritos(conn, 1))
         conn.close()
+
+
+class CorreoLocalTests(unittest.TestCase):
+    """En el prototipo local, sin envío real, el enlace se muestra en la página."""
+
+    def test_local_console_backend_shows_link_on_page(self):
+        from cuentas import correo
+        with tempfile.TemporaryDirectory() as folder:
+            app = Flask('local', root_path=str(ROOT))
+            app.config.update(AERIS_ENV='local', TESTING=True)
+            app.extensions['cuentas_enviar'] = correo.consola
+            configurar(app, Path(folder), {'AERIS_CUENTAS_DB_PATH': str(Path(folder) / 'u.db'), 'AERIS_SECRET_KEY': 'k' * 64})
+            c = app.test_client()
+            token = csrf(c.get('/cuenta/registro').get_data(as_text=True))
+            html = c.post('/cuenta/registro', data={'csrf': token, 'correo': 'a@b.mx', 'contrasena': CLAVE,
+                                                     'confirmar': CLAVE, 'acepto': 'si'}).get_data(as_text=True)
+            self.assertIn('Prototipo local', html)
+            enlace = re.search(r'href="https?://[^/]+(/cuenta/verificar/[^"]+)"', html).group(1)
+            self.assertIn('Correo confirmado', c.get(enlace).get_data(as_text=True))
+
+    def test_real_sender_never_shows_link(self):
+        with tempfile.TemporaryDirectory() as folder:
+            enviados = []
+            c = crear_app(folder, enviados).test_client()
+            token = csrf(c.get('/cuenta/registro').get_data(as_text=True))
+            html = c.post('/cuenta/registro', data={'csrf': token, 'correo': 'a@b.mx', 'contrasena': CLAVE,
+                                                     'confirmar': CLAVE, 'acepto': 'si'}).get_data(as_text=True)
+            self.assertEqual(1, len(enviados))
+            self.assertNotIn('/cuenta/verificar/', html)
+
+
+class LimiteCorreoTests(unittest.TestCase):
+    """Regresión: tras el límite de correos la página decía «te enviamos un enlace» sin enviarlo."""
+
+    def registrar_y_entrar(self, app, veces):
+        c = app.test_client()
+        token = csrf(c.get('/cuenta/registro').get_data(as_text=True))
+        c.post('/cuenta/registro', data={'csrf': token, 'correo': 'a@b.mx', 'contrasena': CLAVE, 'confirmar': CLAVE, 'acepto': 'si'})
+        respuestas = []
+        for _ in range(veces):
+            token = csrf(c.get('/cuenta/entrar').get_data(as_text=True))
+            respuestas.append(c.post('/cuenta/entrar', data={'csrf': token, 'correo': 'a@b.mx', 'contrasena': CLAVE}).get_data(as_text=True))
+        return respuestas
+
+    def test_real_sender_is_limited_and_says_so(self):
+        with tempfile.TemporaryDirectory() as folder:
+            enviados = []
+            ultima = self.registrar_y_entrar(crear_app(folder, enviados), 4)[-1]
+            self.assertEqual(3, len(enviados))
+            self.assertIn('Ya te enviamos varios enlaces', ultima)
+            self.assertNotIn('Te enviamos un enlace nuevo', ultima)
+
+    def test_local_prototype_always_shows_a_fresh_link(self):
+        from cuentas import correo
+        with tempfile.TemporaryDirectory() as folder:
+            app = Flask('local2', root_path=str(ROOT))
+            app.config.update(AERIS_ENV='local', TESTING=True)
+            app.extensions['cuentas_enviar'] = correo.consola
+            configurar(app, Path(folder), {'AERIS_CUENTAS_DB_PATH': str(Path(folder) / 'u.db'), 'AERIS_SECRET_KEY': 'k' * 64})
+            ultima = self.registrar_y_entrar(app, 4)[-1]
+            self.assertIn('Prototipo local', ultima)
+            self.assertRegex(ultima, r'href="https?://[^"]+/cuenta/verificar/')

@@ -55,3 +55,52 @@ la consola del servidor, entre `--- correo local (no enviado) ---` y `--- fin de
   iniciada: última lectura horaria, hora local y si queda por encima o por debajo del umbral.
 - `/cuenta` resume las estaciones elegidas.
 - Esquema v2 (`favoritos`, `usuarios.umbral`); una base v1 se migra sola al abrir.
+
+## Fase D: alertas por Telegram desde la cuenta
+
+- «Mi cuenta» → «Conectar Telegram» genera `https://t.me/AERIS_QRO_BOT?start=<código>`:
+  de un solo uso, 15 minutos, 5 por hora; solo se guarda su SHA-256.
+- El bot (`--cuentas data/aeris_usuarios.db`) recibe `/start <código>` y vincula el chat.
+  Una cuenta, un chat; un chat, una cuenta. Cuentas sin verificar o desactivadas no se vinculan.
+- `alertas/vinculos.py` copia en cada vuelta del bot (≤ 30 s) las estaciones y el umbral
+  de la cuenta (o 25 µg/m³) a las suscripciones del chat. Respeta `/pausa`, `/silencio`
+  y el historial de avisos. `/suscribir` y `/cancelar` remiten a la web.
+- Se desvincula con «Desconectar Telegram», `/desvincular`, `/baja` o al borrar la cuenta;
+  el bot quita esas suscripciones y lo avisa en el chat.
+- Esquemas: cuentas v3 (`telegram_vinculos`, `telegram_codigos`) y alertas v2
+  (`chats_vinculados`), con migración automática.
+
+## Prototipo local: correos
+
+Sin servicio de correo, el enlace de verificación o recuperación se imprime en la
+consola y además se muestra en la página. Solo ocurre en modo `local` con el envío de
+consola; con un envío real nunca aparece en pantalla.
+
+## Fase F: panel de administración
+
+- `/admin` (resumen) y `/admin/usuarios` (lista, búsqueda y acciones), solo para rol
+  `admin`. Sin sesión redirige a iniciar sesión; con otro rol responde 404.
+- Resumen: cifras de cuentas; ingesta según los reportes que ya escribe la
+  sincronización (`data/sync_runtime/scheduler`, sin ejecutarla); última lectura por
+  estación (atrasada si pasa de 4 h); base del bot en solo lectura; bitácora.
+- Acciones: confirmar correo, activar o desactivar (cierra sus sesiones), dar o quitar
+  admin y borrar. Nadie puede aplicárselas a sí mismo y siempre queda al menos un admin
+  activo. Todas quedan en `admin_eventos` (esquema v4).
+- Rol desde la consola:
+
+```powershell
+.venv\Scripts\python.exe -B -m cuentas.admin listar
+.venv\Scripts\python.exe -B -m cuentas.admin rol correo@ejemplo.mx admin
+```
+
+## Pruebas sin tocar las bases reales
+
+Algunas pruebas importan la app real, que abre (y migra) las bases configuradas. Para
+no tocar las del prototipo, apunta las variables a una carpeta temporal:
+
+```powershell
+$t = New-Item -ItemType Directory -Path (Join-Path $env:TEMP ([guid]::NewGuid()))
+$env:AERIS_DB_PATH = 'C:\Users\MSI_COREi5\AERIS\data\aeris_air_quality.db'
+$env:AERIS_CUENTAS_DB_PATH = "$t\u.db"; $env:AERIS_ALERTAS_DB_PATH = "$t\a.db"
+.venv\Scripts\python.exe -B -m unittest discover -s tests
+```
